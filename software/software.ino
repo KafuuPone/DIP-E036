@@ -1,11 +1,9 @@
-// I2C Communication
-#include "Wire.h"
-// File storage
-#include "EEPROM.h"
-// Button detection and debouncing
-#include "button.h"
-// LCD I2C library
-#include "LiquidCrystal_I2C.h"
+#include "Wire.h"                 // I2C Communication
+#include "EEPROM.h"               // File storage
+#include "LiquidCrystal_I2C.h"    // LCD I2C library
+
+#include "button.h"               // Button detection and debouncing
+#include "lcd_symbols.h"          // Containing custom symbols
 
 // Frequency limits
 #define FREQ_MAX 1080
@@ -49,63 +47,11 @@ void update_freq();
 void display_freq(int frequency);
 void display_signal();
 void update_radiotext(int mode);
-void clear_radiotext(char version);
+void clear_radiotext(char version = ' ');
 char rds_byte_to_char(uint8_t input);
 
 // LCD
 LiquidCrystal_I2C lcd(LCD_ADDRESS, 16, 2); // 16x2 LCD
-
-// LCD custom symbols
-uint8_t sym_antenna[] = {
-  0b11111,
-  0b01110,
-  0b00100,
-  0b00100,
-  0b00100,
-  0b00100,
-  0b00100,
-  0b00100
-};
-uint8_t sym_lowsignal[] = {
-  0b00000,
-  0b00000,
-  0b00000,
-  0b00000,
-  0b00000,
-  0b11111,
-  0b11111,
-  0b11111
-};
-uint8_t sym_midsignal[] = {
-  0b00000,
-  0b00000,
-  0b00000,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111
-};
-uint8_t sym_highsignal[] = {
-  0b00000,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111
-};
-uint8_t sym_volume[] = {
-  0b00001,
-  0b00011,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b00011,
-  0b00001
-};
 
 // Buttons
 Button l_key, r_key;
@@ -547,11 +493,11 @@ void loop() {
         if(rds_typeflag != rds_prev_typeflag) {
           // type A
           if(rds_version == true) {
-            clear_radiotext("A");
+            clear_radiotext('A');
           }
           // type B
           else {
-            clear_radiotext("B");
+            clear_radiotext('B');
           }
         }
         // update rds radiotext
@@ -580,7 +526,7 @@ void loop() {
     else {
       lcd.setCursor(0, 1);
       for(int i=0; i<16; i++) {
-        char print_char = "\n";
+        char print_char = '\n';
         // version A radiotext
         if(rds_version == true) {
           print_char = radiotext_A[i];
@@ -590,9 +536,9 @@ void loop() {
           print_char = radiotext_B[i];
         }
 
-        // ends print when hits char "\n"
-        if(print_char == "\n") {
-          print_char = " ";
+        // ends print when hits char '\n'
+        if(print_char == '\n') {
+          print_char = ' ';
         }
 
         lcd.print(print_char);
@@ -831,17 +777,17 @@ void update_radiotext(bool version) {
 }
 
 // clear RDS radiotext, default char is space
-void clear_radiotext(char version = " ") {
+void clear_radiotext(char version) {
   // version A
-  if(version != "B") {
+  if(version != 'B') {
     for(int i=0; i<64; i++) {
-      radiotext_A[i] = " ";
+      radiotext_A[i] = ' ';
     }
   }
   // version B
-  if(version != "A") {
+  if(version != 'A') {
     for(int i=0; i<32; i++) {
-      radiotext_B[i] = " ";
+      radiotext_B[i] = ' ';
     }
   }
 }
@@ -850,13 +796,13 @@ void clear_radiotext(char version = " ") {
 char rds_byte_to_char(uint8_t input) {
   char output;
   if(input == 0x0d) {
-    output = "\n";
+    output = '\n';
   }
   else if (input >= 0x20) {
-    output = input(char);
+    output = (char)input;
   }
   else {
-    output = " ";
+    output = ' ';
   }
   return output;
 }
