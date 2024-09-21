@@ -1,0 +1,122 @@
+#include <stdio.h>
+#include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/i2c.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "esp_bt.h"
+#include "esp_a2dp_api.h"
+#include "esp_avrc_api.h"
+#include "esp_bt_main.h"
+
+// I2C configuration for FM tuner
+#define I2C_MASTER_SCL_IO 22    // SCL pin
+#define I2C_MASTER_SDA_IO 21    // SDA pin
+#define I2C_MASTER_NUM I2C_NUM_0
+#define I2C_MASTER_FREQ_HZ 100000
+#define I2C_MASTER_TX_BUF_DISABLE 0
+#define I2C_MASTER_RX_BUF_DISABLE 0
+
+// GPIO pins for volume and frequency control
+#define GPIO_VOLUME_UP 18
+#define GPIO_VOLUME_DOWN 19
+#define GPIO_FREQ_UP 23
+#define GPIO_FREQ_DOWN 5
+
+// Function to initialize I2C communication
+void i2c_master_init() {
+    i2c_config_t conf;
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = I2C_MASTER_SDA_IO;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.scl_io_num = I2C_MASTER_SCL_IO;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
+    i2c_param_config(I2C_MASTER_NUM, &conf);
+    i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+}
+
+// FM tuner initialization (placeholder for tuner chip setup)
+void fm_tuner_init() {
+    // Code to initialize and communicate with FM tuner
+    // (specific to the tuner chip you're using, e.g., TEA5767 or Si4703)
+}
+
+// Function to set frequency on the FM tuner
+void set_fm_frequency(uint16_t frequency) {
+    // Code to set the FM tuner frequency
+    // Send the appropriate I2C commands to the tuner chip
+}
+
+// Function to read signal strength
+uint8_t get_signal_strength() {
+    // Code to read signal strength from the tuner
+    return 0; // Placeholder
+}
+
+// Bluetooth audio callback for A2DP
+void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len) {
+    // Send audio data to Bluetooth speakers
+}
+
+// Bluetooth initialization and connection setup
+void bt_init() {
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT));
+    ESP_ERROR_CHECK(esp_bluedroid_init());
+    ESP_ERROR_CHECK(esp_bluedroid_enable());
+
+    esp_a2d_register_callback(bt_app_a2d_data_cb);
+    esp_a2d_sink_init();
+}
+
+// Task to handle FM tuning and display
+void fm_task(void *pvParameters) {
+    uint16_t current_frequency = 8750;  // Starting frequency: 87.5 MHz
+    uint8_t signal_strength;
+
+    while (1) {
+        // Update display with current frequency and signal strength
+        signal_strength = get_signal_strength();
+        printf("Frequency: %d MHz, Signal Strength: %d\n", current_frequency / 100, signal_strength);
+
+        // Check GPIO inputs for tuning control (e.g., volume and frequency buttons)
+        if (gpio_get_level(GPIO_FREQ_UP)) {
+            current_frequency += 10;  // Increment frequency by 0.1 MHz
+            set_fm_frequency(current_frequency);
+        } else if (gpio_get_level(GPIO_FREQ_DOWN)) {
+            current_frequency -= 10;  // Decrement frequency by 0.1 MHz
+            set_fm_frequency(current_frequency);
+        }
+
+        // Volume control logic can also be added here
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+}
+
+// Main application entry point
+void app_main() {
+    i2c_master_init();
+    fm_tuner_init();
+    bt_init();
+
+    // GPIO initialization for buttons
+    gpio_set_direction(GPIO_FREQ_UP, GPIO_MODE_INPUT);
+    gpio_set_direction(GPIO_FREQ_DOWN, GPIO_MODE_INPUT);
+    gpio_set_direction(GPIO_VOLUME_UP, GPIO_MODE_INPUT);
+    gpio_set_direction(GPIO_VOLUME_DOWN, GPIO_MODE_INPUT);
+
+    // Create FM tuning task
+    xTaskCreate(fm_task, "fm_task", 2048, NULL, 5, NULL);
+}
