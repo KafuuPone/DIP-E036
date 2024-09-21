@@ -30,6 +30,7 @@ uint8_t curr_vol = 7; // volume range = 0-15 (RDA5807 only has volume resolution
 int prev_analogfreq;
 int prev_analogvol;
 unsigned long last_vol_adj;
+int prev_freq = FREQ_MIN;
 
 // channel = (frequency in MHz - 87.0) / 0.1
 // using 0.1Mhz as channel spacing
@@ -47,6 +48,9 @@ bool seeking();
 void update_freq();
 void display_freq(int frequency);
 void display_signal();
+void update_radiotext(int mode);
+void clear_radiotext(char version);
+char rds_byte_to_char(uint8_t input);
 
 // LCD
 LiquidCrystal_I2C lcd(LCD_ADDRESS, 16, 2); // 16x2 LCD
@@ -223,6 +227,13 @@ uint8_t tune_config[] = {
 // Current read data from RDA5807
 uint8_t requested_data[12];
 
+// RDS Radio Text
+char radiotext_A[64];
+char radiotext_B[32];
+bool rds_version = false; // true - version A, false - version B
+bool rds_typeflag = false;
+bool rds_prev_typeflag = false;
+
 void setup() {
   Serial.begin(115200); // serial communication speed 115200 bps
   analogReadResolution(8); // Set analog read resolution: 8 bits
@@ -269,6 +280,7 @@ void setup() {
   prev_analogfreq = analogRead(FRQ_TUNE);
   prev_analogvol = analogRead(VOL_ADJS);
   last_vol_adj = 0;
+  clear_radiotext();
 
   // Delay a while and clear LCD
   delay(2000);
@@ -518,6 +530,37 @@ void loop() {
     }
 
     // determine what to display at the bottom
+    // RDS signal reading
+    // Clear RDS radio text if changed frequency
+    if(curr_freq != prev_freq) {
+      clear_radiotext();
+    }
+    // display id RDSR = 1, new RDS group is ready
+    if((requested_data[0] >> 7) == 0b1) {
+      // only update if data type is radiotext, group type code = 0010
+      if((requested_data[6] >> 4) == 0b0010) {
+        // check version, a = true
+        rds_version = ((requested_data[6] & 0b1000) == 0b0);
+        // check type a/b, a = true
+        rds_typeflag = ((requested_data[7] & 0b10000) == 0b0);
+        // if type flag updated(NOT THE SAME AS VERSION), clear current type radio text
+        if(rds_typeflag != rds_prev_typeflag) {
+          // type A
+          if(rds_version == true) {
+            clear_radiotext("A");
+          }
+          // type B
+          else {
+            clear_radiotext("B");
+          }
+        }
+        // update rds radiotext
+        update_radiotext(rds_version);
+        // update prev_type_a/b
+        rds_prev_typeflag = rds_typeflag;
+      }
+    }
+
     // volume (when adjusting volume, will delay for 1s after done adjustment)
     if(millis() - last_vol_adj < 1000) {
       lcd.setCursor(0, 1);
@@ -532,9 +575,28 @@ void loop() {
       }
 
     }
-    // RDS signal reading and displaying (always ongoing, but volume overrides it)
+    // Display the text if not adjusting volume (FOR NOW: only display first 16 characters, implement scroll display later)
+    // TO DO LATER: only display text when all the chars are received
     else {
+      lcd.setCursor(0, 1);
+      for(int i=0; i<16; i++) {
+        char print_char = "\n";
+        // version A radiotext
+        if(rds_version == true) {
+          print_char = radiotext_A[i];
+        }
+        // version B radiotext
+        else {
+          print_char = radiotext_B[i];
+        }
 
+        // ends print when hits char "\n"
+        if(print_char == "\n") {
+          print_char = " ";
+        }
+
+        lcd.print(print_char);
+      }
     }
   }
   else {
@@ -564,7 +626,10 @@ void loop() {
     }
   }
 
-  // log time per loop
+  // update previous freq as current freq
+  prev_freq = curr_freq;
+
+  // log current time per loop
   Serial.print("Ended loop at ");
   Serial.print(millis());
   Serial.println("ms");
@@ -716,7 +781,7 @@ void display_signal() {
 
   // whether is it tuned to station
   bool station = ((byte3 & 0b1) == 0b1);
-  uint8_t strength = byte3 >> 1; // maximum is 0b1111111
+  uint8_t strength = byte3 >> 1; // maximum is 0b1111111, RSSI
 
   // only display signal if tuned to station
   lcd.setCursor(12, 0);
@@ -745,4 +810,53 @@ void display_signal() {
   else {
     lcd.print("    ");
   }
+}
+
+// decode and update RDS radiotext from read data of RDA5807
+void update_radiotext(bool version) {
+  uint8_t segment_address = requested_data[7] >> 4;
+
+  // version A radiotext
+  if(version == true) {
+    for(int i=0; i<4; i++) {
+      radiotext_A[segment_address*4 + i] = rds_byte_to_char(requested_data[8+i]);
+    }
+  }
+  // version B radiotext
+  else {
+    for(int i=0; i<2; i++) {
+      radiotext_A[segment_address*2 + i] = rds_byte_to_char(requested_data[10+i]);
+    }
+  }
+}
+
+// clear RDS radiotext, default char is space
+void clear_radiotext(char version = " ") {
+  // version A
+  if(version != "B") {
+    for(int i=0; i<64; i++) {
+      radiotext_A[i] = " ";
+    }
+  }
+  // version B
+  if(version != "A") {
+    for(int i=0; i<32; i++) {
+      radiotext_B[i] = " ";
+    }
+  }
+}
+
+// void radiotext byte to char
+char rds_byte_to_char(uint8_t input) {
+  char output;
+  if(input == 0x0d) {
+    output = "\n";
+  }
+  else if (input >= 0x20) {
+    output = input(char);
+  }
+  else {
+    output = " ";
+  }
+  return output;
 }
