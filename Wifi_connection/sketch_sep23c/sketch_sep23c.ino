@@ -1,4 +1,3 @@
-
 #include <WiFi.h>
 
 // Replace with your network credentials
@@ -11,53 +10,65 @@ WiFiServer server(80);
 void setup() {
   Serial.begin(115200);
 
-  // Connect to Wi-Fi network with SSID and password
+  // Setting the ESP32 as an Access Point
   Serial.print("Setting AP (Access Point)…");
-  // Remove the password parameter, if you want the AP (Access Point) to be open
   WiFi.softAP(ssid, password);
 
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(IP);
 
-  server.begin();
+  server.begin();  // Start the server
 }
 
-void loop(){
+void loop() {
   WiFiClient client = server.available();   // Listen for incoming clients
 
   if (client) {                             // If a new client connects,
-    Serial.println("New Client.");          // print a message out in the serial port
+    Serial.println("New Client.");          // print a message in the serial monitor
     String currentLine = "";                // make a String to hold incoming data from the client
-    while (client.connected()) {            // loop while the client's connected
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
-        currentLine += c;
-        if (c == '\n') {                    // if the byte is a newline character
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 2) {
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
+    String userInput = "";                  // String to store the user input (message)
+    bool inputReceived = false;             // Flag to track if input is received
+
+    while (client.connected()) {            // Loop while the client is connected
+      if (client.available()) {             // If there's bytes to read from the client,
+        char c = client.read();             // Read a byte
+        Serial.write(c);                    // Print it out to the serial monitor
+        currentLine += c;                   // Add byte to the currentLine
+
+        // Look for the end of the HTTP request
+        if (c == '\n') {
+          // If the current line is blank, we got two newline characters in a row
+          // That's the end of the client HTTP request, so send a response
+          if (currentLine.length() == 2 && inputReceived) {
+            // Send HTTP response header
             client.println("HTTP/1.1 200 OK");
             client.println("Content-type:text/html");
             client.println("Connection: close");
             client.println();
 
-            // Send your "Hello World" HTML response
+            // Send the response HTML page with user input echoed back
             client.println("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>");
-            client.println("<body><h1>Hello World</h1></body></html>");
+            client.println("<body><h1>Message Received</h1>");
+            client.println("<p>Your message: " + userInput + "</p></body></html>");
 
             // The HTTP response ends with another blank line
             client.println();
-            // Break out of the while loop
             break;
-          } else { // if you got a newline, then clear currentLine
+          } else { // If a newline is received but not the end of the request, clear the currentLine
             currentLine = "";
           }
-        } else if (c != '\r') {  // if you got anything else but a carriage return character,
-          currentLine += c;      // add it to the end of the currentLine
+        } else if (c != '\r') {  // If you got anything else but a carriage return character,
+          currentLine += c;      // Add it to the end of the currentLine
+
+          // Look for the 'GET /?message=' in the HTTP request
+          if (currentLine.indexOf("GET /?message=") >= 0) {
+            int msgStart = currentLine.indexOf("message=") + 8;  // Find where the message starts
+            int msgEnd = currentLine.indexOf(" ", msgStart);     // Find where the message ends (before a space)
+            userInput = currentLine.substring(msgStart, msgEnd); // Extract the user input
+            inputReceived = true;                               // Set flag to true
+            Serial.println("User Input: " + userInput);          // Print user input to Serial Monitor
+          }
         }
       }
     }
