@@ -18,22 +18,33 @@ AsyncWebServer server(80);
 const char* ssid = "Webserver-demo";
 const char* password = "123456789";
 
-const char* PARAM_INPUT = "INPUT";
+const char* PARAM_FREQUENCY = "frequency";
 
-
-// HTML web page to handle input fields
+// List of FM Radio frequencies in Singapore
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
-  <title>Webserver Demo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=2">
+  <title>FM Radio Selector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   </head><body>
-  <form action="/get">
-    Input frequency: <input type="text" name="INPUT">
+  <h2>Select an FM Radio Station in Singapore</h2>
+  <form action="/get" method="GET">
+    <label for="frequency">Choose a station:</label>
+    <select name="frequency" id="frequency">
+      <option value="88.3">88.3 MHz (Kiss92 FM)</option>
+      <option value="89.3">89.3 MHz (ONE FM 89.3)</option>
+      <option value="90.5">90.5 MHz (Gold 90.5FM)</option>
+      <option value="91.3">91.3 MHz (ONE 91.3FM)</option>
+      <option value="92.4">92.4 MHz (Symphony 92.4)</option>
+      <option value="93.8">93.8 MHz (938NOW)</option>
+      <option value="94.2">94.2 MHz (Oli 96.8 FM)</option>
+      <option value="95.8">95.8 MHz (Capital 95.8FM)</option>
+      <option value="96.3">96.3 MHz (Hao FM 96.3)</option>
+      <option value="98.0">98.0 MHz (Warna 94.2 FM)</option>
+      <option value="99.5">99.5 MHz (Symphony FM)</option>
+    </select><br><br>
     <input type="submit" value="Submit">
   </form>
-
-  <form action="/get">
-</body></html>)rawliteral";
+  </body></html>)rawliteral";
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
@@ -45,7 +56,6 @@ void setup() {
   Serial.println("Configuring access point...");
 
   // You can remove the password parameter if you want the AP to be open.
-  // a valid password must have more than 7 characters
   if (!WiFi.softAP(ssid, password)) {
     log_e("Soft AP creation failed.");
     while(1);
@@ -54,43 +64,44 @@ void setup() {
   Serial.print("AP IP address: ");
   Serial.println(myIP);
 
-  // Send web page with input fields to client
+  // Send web page with FM radio stations list to client
   Serial.println("Make HTTP GET Request");
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
   });
 
-  // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
+  // Handle the form submission and extract the selected frequency
   server.on("/get", HTTP_GET, [] (AsyncWebServerRequest * request) {
-    String inputMessage;
-    String inputParam;
-    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
-    if (request->hasParam(PARAM_INPUT)
-    ) {
-      inputMessage = request->getParam(PARAM_INPUT)->value();
-      inputParam = PARAM_INPUT;
+    String frequencyMessage;
+    String frequencyParam;
+    
+    // Check if the "frequency" parameter exists in the request
+    if (request->hasParam(PARAM_FREQUENCY)) {
+      frequencyMessage = request->getParam(PARAM_FREQUENCY)->value();
+      frequencyParam = PARAM_FREQUENCY;
+    } else {
+      frequencyMessage = "No frequency selected";
     }
 
-    else {
-      inputMessage = "No message sent";
-    }
-    Serial.print("Input message: ");
-    Serial.println(inputMessage);
-    remote_frequency = inputMessage.toFloat(); //Assuming input message is float number
-    Serial.print("Frequency: ");
+    // Print the received frequency to Serial Monitor
+    Serial.print("Selected Frequency: ");
+    Serial.println(frequencyMessage);
+    
+    // Convert the selected frequency to float and store in remote_frequency
+    remote_frequency = frequencyMessage.toFloat();
+    Serial.print("Remote Frequency Set To: ");
     Serial.println(remote_frequency);
 
-    request->send(200, "text/html", "HTTP GET request sent to your ESP on input field ("
-                  + inputParam + ") with value: " + inputMessage +
-                  "<a href=\"/\">Return to Home Page</a>");
+    // Respond with confirmation and provide a link to go back to the main page
+    request->send(200, "text/html", "You selected the frequency ("
+                  + frequencyMessage + " MHz)<br><a href=\"/\">Return to Home Page</a>");
   });
+  
   server.onNotFound(notFound);
   server.begin();
   Serial.println("Server started");
-
-  
 }
 
 void loop() {
-
+  // Empty loop as server runs asynchronously
 }
