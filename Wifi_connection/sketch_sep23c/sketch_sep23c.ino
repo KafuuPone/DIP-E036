@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <iostream>
+#include <string>
 #ifdef ESP32
 #include <WiFi.h>
 #include <AsyncTCP.h>
@@ -7,6 +9,8 @@
 #include <ESPAsyncTCP.h>
 #endif
 #include <ESPAsyncWebServer.h>
+
+float remote_frequency;
 
 AsyncWebServer server(80);
 
@@ -24,7 +28,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   <meta name="viewport" content="width=device-width, initial-scale=2">
   </head><body>
   <form action="/get">
-    INPUT: <input type="text" name="INPUT">
+    Input frequency: <input type="text" name="INPUT">
     <input type="submit" value="Submit">
   </form>
 
@@ -70,7 +74,12 @@ void setup() {
     else {
       inputMessage = "No message sent";
     }
+    Serial.print("Input message: ");
     Serial.println(inputMessage);
+    remote_frequency = inputMessage.toFloat(); //Assuming input message is float number
+    Serial.print("Frequency: ");
+    Serial.println(remote_frequency);
+
     request->send(200, "text/html", "HTTP GET request sent to your ESP on input field ("
                   + inputParam + ") with value: " + inputMessage +
                   "<a href=\"/\">Return to Home Page</a>");
