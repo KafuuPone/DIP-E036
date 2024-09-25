@@ -34,67 +34,164 @@ const char index_html[] PROGMEM = R"rawliteral(
   <title>FM Radio Selector</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { color: #333; }
-    label { font-size: 16px; margin-right: 10px; }
-    select, input { margin-bottom: 10px; padding: 5px; font-size: 16px; }
-    #status { font-weight: bold; margin-top: 20px; }
-    .slider { width: 300px; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #0078d7;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    label {
+      font-size: 18px;
+      font-weight: bold;
+      color: #0057a7;
+      margin-right: 10px;
+    }
+
+    select, input[type="range"] {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px 0;
+      border: 2px solid #0078d7;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    select:hover, input[type="range"]:hover {
+      border-color: #0057a7;
+    }
+
+    input[type="range"] {
+      width: 300px;
+      height: 10px;
+      background-color: #e0e0e0;
+      appearance: none;
+      outline: none;
+      transition: background-color 0.3s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #0078d7;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #0057a7;
+    }
+
+    #status {
+      font-size: 18px;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #333;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+    }
+
+    .slider-container {
+      margin-bottom: 20px;
+    }
+
+    /* Button-style for dropdown */
+    select {
+      cursor: pointer;
+      background-color: #0078d7;
+      color: white;
+    }
+
+    select:hover {
+      background-color: #0057a7;
+    }
+    
+    /* Add smooth transitions */
+    .slider-container input, select {
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Media query for smaller screens */
+    @media (max-width: 600px) {
+      input[type="range"] {
+        width: 100%;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      label {
+        font-size: 16px;
+      }
+    }
   </style>
   <script>
-    // JavaScript function to send the frequency and volume when user releases the controls
     function sendFrequency() {
       var frequency = document.getElementById("frequency").value;
       var volume = document.getElementById("volume").value;
 
-      // Update the status dynamically as the user interacts with the controls
+      // Update the status dynamically
       document.getElementById("status").innerHTML = "Selected frequency: " + frequency + " MHz, Volume: " + volume;
-      
-      // Send the frequency and volume values to the server only once
+
+      // Send the frequency and volume values to the server
       fetch("/get?frequency=" + frequency + "&volume=" + volume)
       .then(response => response.text())
       .catch(error => console.error("Error:", error));
     }
 
-    // Function to dynamically update volume when user scrolls the slider (but do not send data yet)
     function updateVolumeDisplay() {
       var volume = document.getElementById("volume").value;
-      document.getElementById("volDisplay").innerHTML = volume; // Display the volume dynamically
+      document.getElementById("volDisplay").innerHTML = volume;
     }
 
-    // Function to dynamically update frequency when user changes selection
     function updateFrequency() {
-      sendFrequency(); // Send the updated frequency to the server
+      sendFrequency();
     }
   </script>
   </head><body>
   <h2>FM Radio Selector</h2>
 
-  <label for="frequency">Choose a station:</label>
-  <select id="frequency" name="frequency" onchange="updateFrequency()">
-    <option value="88.3">88.3 MHz (Kiss92 FM)</option>
-    <option value="89.3">89.3 MHz (ONE FM 89.3)</option>
-    <option value="90.5">90.5 MHz (Gold 90.5FM)</option>
-    <option value="91.3">91.3 MHz (ONE 91.3FM)</option>
-    <option value="92.4">92.4 MHz (Symphony 92.4)</option>
-    <option value="93.8">93.8 MHz (938NOW)</option>
-    <option value="94.2">94.2 MHz (Oli 96.8 FM)</option>
-    <option value="95.8">95.8 MHz (Capital 95.8FM)</option>
-    <option value="96.3">96.3 MHz (Hao FM 96.3)</option>
-    <option value="98.0">98.0 MHz (Warna 94.2 FM)</option>
-    <option value="99.5">99.5 MHz (Symphony FM)</option>
-  </select>
-  
-  <br><br>
+  <div class="slider-container">
+    <label for="frequency">Choose a station:</label>
+    <select id="frequency" name="frequency" onchange="updateFrequency()">
+      <option value="88.3">88.3 MHz (Kiss92 FM)</option>
+      <option value="89.3">89.3 MHz (ONE FM 89.3)</option>
+      <option value="90.5">90.5 MHz (Gold 90.5FM)</option>
+      <option value="91.3">91.3 MHz (ONE 91.3FM)</option>
+      <option value="92.4">92.4 MHz (Symphony 92.4)</option>
+      <option value="93.8">93.8 MHz (938NOW)</option>
+      <option value="94.2">94.2 MHz (Oli 96.8 FM)</option>
+      <option value="95.8">95.8 MHz (Capital 95.8FM)</option>
+      <option value="96.3">96.3 MHz (Hao FM 96.3)</option>
+      <option value="98.0">98.0 MHz (Warna 94.2 FM)</option>
+      <option value="99.5">99.5 MHz (Symphony FM)</option>
+    </select>
+  </div>
 
-  <label for="volume">Set Volume (0 - 15):</label>
-  <input type="range" id="volume" name="volume" min="0" max="15" step="1" class="slider" oninput="updateVolumeDisplay()" onchange="sendFrequency()"> <!-- Use onchange to send data only when released -->
-  <span id="volDisplay">0</span> <!-- This will display the volume dynamically -->
-  
-  <br><br>
+  <div class="slider-container">
+    <label for="volume">Set Volume (0 - 15):</label>
+    <input type="range" id="volume" name="volume" min="0" max="15" step="1" class="slider" oninput="updateVolumeDisplay()" onchange="sendFrequency()">
+    <span id="volDisplay">0</span>
+  </div>
 
   <div id="status">Selected frequency: None, Volume: 0</div>
   </body></html>)rawliteral";
+
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
