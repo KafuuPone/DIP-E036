@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include <iostream>
 #include <string>
-#ifdef ESP32
+// #ifdef ESP32
 #include <WiFi.h>
-#include <AsyncTCP.h>
-#else
-#include <WiFi.h>
-#include <ESPAsyncTCP.h>
-#endif
+// #include <AsyncTCP.h>
+// #else
+// #include <WiFi.h>
+// #include <ESPAsyncTCP.h>
+// #endif
 #include <ESPAsyncWebServer.h>
 #include <LiquidCrystal_I2C.h>
 
