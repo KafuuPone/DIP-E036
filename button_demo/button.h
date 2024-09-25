@@ -47,7 +47,7 @@ class Button {
     // detects for sequence 011111111 for last 9 bits
     // pressed(0) to release(1) transition
     bool release() {
-      return (btn_state == 0xfe11);
+      return (btn_state == 0xfeff);
     }
 
     // true if button is fully pressed
@@ -58,6 +58,10 @@ class Button {
     // true if long press is activated
     bool start_longpress() {
       return start_longpress_state;
+    }
+
+    uint16_t state() {
+      return btn_state;
     }
 };
 
