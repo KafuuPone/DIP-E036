@@ -21,6 +21,8 @@ AsyncWebServer server(80);
 
 float remote_frequency;
 int remote_volume;
+bool tune_freq_up = false;
+bool tune_freq_down = false;
 
 // REPLACE WITH YOUR NETWORK CREDENTIALS
 const char* ssid = "Webserver-demo";
@@ -57,7 +59,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       margin-right: 10px;
     }
 
-    select, input[type="range"] {
+    select, input[type="range"], button {
       font-size: 16px;
       padding: 10px;
       margin: 10px 0;
@@ -66,8 +68,9 @@ const char index_html[] PROGMEM = R"rawliteral(
       transition: all 0.3s ease;
     }
 
-    select:hover, input[type="range"]:hover {
+    select:hover, input[type="range"]:hover, button:hover {
       border-color: #0057a7;
+      cursor: pointer;
     }
 
     input[type="range"] {
@@ -105,24 +108,22 @@ const char index_html[] PROGMEM = R"rawliteral(
       display: inline-block;
     }
 
-    .slider-container {
+    .slider-container, .button-container {
       margin-bottom: 20px;
     }
 
-    /* Button-style for dropdown */
-    select {
-      cursor: pointer;
+    button {
       background-color: #0078d7;
       color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
     }
 
-    select:hover {
+    button:hover {
       background-color: #0057a7;
-    }
-    
-    /* Add smooth transitions */
-    .slider-container input, select {
-      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
     /* Media query for smaller screens */
@@ -162,6 +163,26 @@ const char index_html[] PROGMEM = R"rawliteral(
     function updateFrequency() {
       sendFrequency();
     }
+
+    function tuneFrequencyUp() {
+      // Send a request to set tune_freq_up to true
+      fetch("/tune_freq_up")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("status").innerHTML = "Tuning Frequency Up...";
+      })
+      .catch(error => console.error("Error:", error));
+    }
+
+    function tuneFrequencyDown() {
+      // Send a request to set tune_freq_down to true
+      fetch("/tune_freq_down")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("status").innerHTML = "Tuning Frequency Down...";
+      })
+      .catch(error => console.error("Error:", error));
+    }
   </script>
   </head><body>
   <h2>FM Radio Selector</h2>
@@ -189,8 +210,15 @@ const char index_html[] PROGMEM = R"rawliteral(
     <span id="volDisplay">0</span>
   </div>
 
+  <!-- Buttons for tuning frequency up and down -->
+  <div class="button-container">
+    <button onclick="tuneFrequencyUp()">Tune Frequency Up</button>
+    <button onclick="tuneFrequencyDown()">Tune Frequency Down</button>
+  </div>
+
   <div id="status">Selected frequency: None, Volume: 0</div>
   </body></html>)rawliteral";
+
 
 
 void notFound(AsyncWebServerRequest *request) {
@@ -272,9 +300,22 @@ void ServerBegin(){
     Serial.print("Volume: ");
     Serial.println(remote_volume);
 
+
     // Respond with a simple message
     request->send(200, "text/plain", "Frequency received: " + frequencyMessage + " MHz");
   });
+  server.on("/tune_freq_up", HTTP_GET, [](AsyncWebServerRequest * request) {
+    tune_freq_up = true;
+    request->send(200, "text/plain", "Tuning Frequency Up");
+    Serial.println("Tuning up the volume");
+  });
+
+  // Handle the /tune_freq_down request
+  server.on("/tune_freq_down", HTTP_GET, [](AsyncWebServerRequest * request) {
+    tune_freq_down = true;
+    request->send(200, "text/plain", "Tuning Frequency Down");
+    Serial.println("Tuning down the volume");
+      });
   server.onNotFound(notFound);
   server.begin();
   Serial.println("Server started");
