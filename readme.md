@@ -1,3 +1,3 @@
 # RDA5807M-based schematic for reference
 
-![RDA5807M Schematic](https://files.catbox.moe/klkijv.jpg)
+![Schematic SVG](https://files.catbox.moe/1q34ag.svg)
