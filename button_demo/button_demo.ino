@@ -19,11 +19,8 @@ void loop() {
     Serial.println("Pressed.");
   }
   if(test_button.release()) {
-    Serial.println("Pressed to released.");
+    Serial.println("Released.");
   }
-  // if(test_button.fully_pressed()) {
-  //   Serial.println("Button pressed.");
-  // }
   if(test_button.start_longpress()) {
     Serial.println("Longpress enabled.");
   }
@@ -37,5 +34,5 @@ void loop() {
   //     }
   // }
   // Serial.println("");
-  delay(10);
+  delay(1);
 }

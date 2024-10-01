@@ -16,7 +16,7 @@ class Button {
     // initialize button
     void begin(uint8_t button) {
       btn = button;
-      btn_state = 0;
+      btn_state = 0xffff;
       pinMode(btn, INPUT_PULLUP);
     }
 
