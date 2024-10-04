@@ -1,6 +1,8 @@
 #ifndef button_h
 #define button_h
 
+#include "Arduino.h"
+
 class Button {
   private:
     uint8_t btn; // pin number
