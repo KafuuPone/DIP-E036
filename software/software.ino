@@ -442,27 +442,56 @@ void loop() {
       }
     }
 
-    // Display the text if not adjusting volume (FOR NOW: only display first 16 characters, implement scroll display later)
+    // Display the RDS text if not adjusting volume (FOR NOW: only display first 16 characters, implement scroll display later)
     // TO DO LATER: only display text when all the chars are received
     else {
+      // determine text length
+      int length = 16;
+      // version A radiotext
+      if(rds_version == true) {
+        for(int i=0; i<64; i++) {
+          if(radiotext_A[i] == '\n') {
+            length = i;
+            break;
+          }
+        }
+      }
+      // version B radiotext
+      else {
+        for(int i=0; i<32; i++) {
+          if(radiotext_B[i] == '\n') {
+            length = i;
+            break;
+          }
+        }
+      }
+
+      // Starts printing
       lcd.setCursor(0, 1);
-      for(int i=0; i<16; i++) {
-        char print_char = '\n';
-        // version A radiotext
-        if(rds_version == true) {
-          print_char = radiotext_A[i];
+      if(length <= 16) {
+        for(int i=0; i<16; i++) {
+          if(i < length) {
+            if(rds_version == true) lcd.print(radiotext_A[i]);
+            else lcd.print(radiotext_B[i]);
+          }
+          else {
+            lcd.print(" ");
+          }
         }
-        // version B radiotext
-        else {
-          print_char = radiotext_B[i];
+      }
+      // Scrolling
+      else {
+        int offset = (millis() / RDS_SCROLL) % (length + 3); // 3 spaces between end and beginning
+        for(int i=0; i<16; i++) {
+          int index = (i + offset) % (length + 3);
+          if(index < length) {
+            if(rds_version == true) lcd.print(radiotext_A[index]);
+            else lcd.print(radiotext_B[index]);
+          }
+          else {
+            lcd.print(" ");
+          }
         }
-
-        // ends print when hits char '\n'
-        if(print_char == '\n') {
-          print_char = ' ';
-        }
-
-        lcd.print(print_char);
       }
     }
 
@@ -508,6 +537,20 @@ void loop() {
     save_channel(saved_channels, curr_vol, 8);
   }
   loop_num++;
+
+  // // Temporary recording of RDS data, to be removed
+  // Serial.print("[RDS] "); Serial.print(curr_freq); Serial.print(", , ");
+  // for(int index = 4; index < 12; index++) {
+  //   uint8_t byte = requested_data[index];
+  //   for (int i = 7; i >= 0; i--) {
+  //     Serial.print((byte >> i) & 1);
+  //   }
+  //   Serial.print(", ");
+  //   if(index % 2 == 1) {
+  //     Serial.print(", ");
+  //   }
+  // }
+  // Serial.println("");
 
   // delay
   delay(1);

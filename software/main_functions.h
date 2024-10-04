@@ -412,7 +412,7 @@ char rds_byte_to_char(uint8_t input) {
 
 // decode and update RDS radiotext from read data of RDA5807 (arr=requested_data, arr_A=radiotext_A, arr_B=radiotext_B)
 void update_radiotext(const uint8_t* arr, char* arr_A, char* arr_B, bool version) {
-  uint8_t segment_address = arr[7] >> 4;
+  uint8_t segment_address = arr[7] & 0b1111;
 
   // version A radiotext
   if(version == true) {
