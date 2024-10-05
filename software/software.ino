@@ -26,6 +26,7 @@ int prev_freq = curr_freq;
 bool scan_ongoing = false;
 bool ready_state = true;
 int wifi_freq_update = 0xff; uint8_t wifi_vol_update = 0xff; String wifi_tune_update = "Nan"; // True if user on wifi wants to change volume or frequency
+String RDS_radiotext = "";
 
 // channel = (frequency in MHz - 87.0) / 0.1
 // using 0.1Mhz as channel spacing
@@ -225,7 +226,7 @@ void setup() {
 
   // Open web server
   WifiAP_begin();
-  ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update);
+  ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext);
 }
 
 // Loops while device is running
@@ -427,6 +428,30 @@ void loop() {
         rds_prev_typeflag = rds_typeflag;
       }
     }
+    // determine text length
+    int rds_length = 16;
+    String radio_text = "";
+    // version A radiotext
+    if(rds_version == true) {
+      for(int i=0; i<64; i++) {
+        if(radiotext_A[i] == '\n') {
+          rds_length = i;
+          break;
+        }
+        radio_text += radiotext_A[i];
+      }
+    }
+    // version B radiotext
+    else {
+      for(int i=0; i<32; i++) {
+        if(radiotext_B[i] == '\n') {
+          rds_length = i;
+          break;
+        }
+        radio_text += radiotext_B[i];
+      }
+    }
+    RDS_radiotext = radio_text;
 
     // volume (when adjusting volume, will delay for 1s after done adjustment)
     if(millis() - last_vol_adj < 1000) {
@@ -442,37 +467,15 @@ void loop() {
       }
     }
 
-    // Display the RDS text if not adjusting volume (FOR NOW: only display first 16 characters, implement scroll display later)
-    // TO DO LATER: only display text when all the chars are received
+    // Display the RDS text if not adjusting volume
     else {
-      // determine text length
-      int length = 16;
-      // version A radiotext
-      if(rds_version == true) {
-        for(int i=0; i<64; i++) {
-          if(radiotext_A[i] == '\n') {
-            length = i;
-            break;
-          }
-        }
-      }
-      // version B radiotext
-      else {
-        for(int i=0; i<32; i++) {
-          if(radiotext_B[i] == '\n') {
-            length = i;
-            break;
-          }
-        }
-      }
-
       // Starts printing
       lcd.setCursor(0, 1);
-      if(length <= 16) {
+      // Short text, no scrolling
+      if(rds_length <= 16) {
         for(int i=0; i<16; i++) {
-          if(i < length) {
-            if(rds_version == true) lcd.print(radiotext_A[i]);
-            else lcd.print(radiotext_B[i]);
+          if(i < rds_length) {
+            lcd.print(radio_text[i]);
           }
           else {
             lcd.print(" ");
@@ -481,12 +484,11 @@ void loop() {
       }
       // Scrolling
       else {
-        int offset = (millis() / RDS_SCROLL) % (length + 3); // 3 spaces between end and beginning
+        int offset = (millis() / RDS_SCROLL) % (rds_length + 3); // 3 spaces between end and beginning
         for(int i=0; i<16; i++) {
-          int index = (i + offset) % (length + 3);
-          if(index < length) {
-            if(rds_version == true) lcd.print(radiotext_A[index]);
-            else lcd.print(radiotext_B[index]);
+          int index = (i + offset) % (rds_length + 3);
+          if(index < rds_length) {
+            lcd.print(radio_text[index]);
           }
           else {
             lcd.print(" ");

@@ -154,6 +154,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
             var freqString = data.frequency; // Sending 922 instead of 92.2
             var volString = data.volume;
+            var radiotext = data.radiotext;
 
             // Update frequency
             if(freqString.length == 3) {
@@ -178,6 +179,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             // Bottom status update
             document.getElementById("freq-status").innerHTML = "Selected frequency: " + String((parseInt(freqString)/10).toFixed(1)) + "MHz";
             document.getElementById("vol-status").innerHTML = "Volume: " + volString;
+            document.getElementById("radiotext-status").innerHTML = "RDS: " + radiotext;
           });
         }
         else {
@@ -185,7 +187,8 @@ const char index_html[] PROGMEM = R"rawliteral(
 
           // Update the status dynamically
           document.getElementById("freq-status").innerHTML = "Tuning...";
-          document.getElementById("vol-status").innerHTML = "Tuning...";
+          document.getElementById("vol-status").innerHTML = "";
+          document.getElementById("radiotext-status").innerHTML = "";
         }
       });
     }
@@ -211,6 +214,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       document.getElementById("freq-status").innerHTML = "Tuning...";
 
       var frequency = readFrequency();
+      var volume = document.getElementById("volume").value;
 
       if(direction == 'up') {
         frequency += parseFloat(digitValue);
@@ -223,8 +227,8 @@ const char index_html[] PROGMEM = R"rawliteral(
         return;
       }
 
-      // Send the frequency values to the server
-      fetch("/get?frequency=" + frequency)
+      // Send the volume values to the server, and also frequency together
+      fetch("/get?frequency=" + frequency + "&volume=" + volume)
       .then(response => response.text())
       .catch(error => console.error("Error:", error));
 
@@ -297,9 +301,10 @@ const char index_html[] PROGMEM = R"rawliteral(
       document.getElementById("vol-status").innerHTML = "Tuning...";
 
       var volume = document.getElementById("volume").value;
+      var frequency = readFrequency();
 
-      // Send the volume values to the server
-      fetch("/get?volume=" + volume)
+      // Send the volume values to the server, and also frequency together
+      fetch("/get?frequency=" + frequency + "&volume=" + volume)
       .then(response => response.text())
       .catch(error => console.error("Error:", error));
 
@@ -389,6 +394,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div class="status">
     <div id="freq-status">Selected frequency: 87.0MHz</div>
     <div id="vol-status">Volume: 0</div>
+    <div id="radiotext-status">RDS: </div>
   </div>
 
 </body>

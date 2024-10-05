@@ -26,20 +26,21 @@ void WifiAP_begin() {
   Serial.println(myIP);
 }
 
-// Setup website (server_pt = &server, freq_pt = &curr_freq, vol_pt = &curr_vol, state_pt = &ready_state, freq_update = &wifi_freq_update, vol_update = &wifi_vol_update, tune_update = &wifi_tune_update)
+// Setup website (server_pt = &server, freq_pt = &curr_freq, vol_pt = &curr_vol, state_pt = &ready_state, freq_update = &wifi_freq_update, vol_update = &wifi_vol_update, tune_update = &wifi_tune_update, radio_text = &RDS_radiotext)
 // AsyncWebServer server(80);
-void ServerBegin(AsyncWebServer* server_pt, int* freq_pt, uint8_t* vol_pt, bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update) {
+void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text) {
   // Serve the web page with FM radio station list
   (*server_pt).on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send_P(200, "text/html", index_html);
   });
 
-  // Handle AJAX requests, get current frequency and volume
+  // Handle AJAX requests, get current frequency, volume and radiotext
   (*server_pt).on("/update", HTTP_GET, [=](AsyncWebServerRequest *request) {
     // Create a JSON response with both values
     String jsonResponse = "{";
     jsonResponse += "\"frequency\":\"" + String(*freq_pt) + "\",";
-    jsonResponse += "\"volume\":\"" + String(*vol_pt) + "\"";
+    jsonResponse += "\"volume\":\"" + String(*vol_pt) + "\",";
+    jsonResponse += "\"radiotext\":\"" + String(*radio_text) + "\"";
     jsonResponse += "}";
     request->send(200, "application/json", jsonResponse);
   });
