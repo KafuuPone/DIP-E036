@@ -23,10 +23,14 @@ int saved_channels[] = {
 int curr_freq = saved_channels[6] + FREQ_MIN; // default frequency = 87.0MHz
 uint8_t curr_vol = saved_channels[7]; // default volume = 4 (0-15)
 int prev_freq = curr_freq;
+bool knob_state = true; // true - frequency, false - volume
 bool scan_ongoing = false;
 bool ready_state = true;
 int wifi_freq_update = 0xff; uint8_t wifi_vol_update = 0xff; String wifi_tune_update = "Nan"; // True if user on wifi wants to change volume or frequency
 String RDS_radiotext = "";
+volatile uint8_t clk_state = 0b11111000;
+volatile uint8_t dt_state = 0b11111000;
+volatile int direction = 0;
 
 // channel = (frequency in MHz - 87.0) / 0.1
 // using 0.1Mhz as channel spacing
@@ -37,6 +41,11 @@ LiquidCrystal_I2C lcd(LCD_ADDRESS, 16, 2); // 16x2 LCD
 // Buttons
 Button l_key, r_key;
 Button chn_button[6];
+Button knob_switch;
+
+// Knob ISR function
+void clockwise_ISR();
+void anticlockwise_ISR();
 
 // Initialize device
 uint8_t init_config[] = {
@@ -173,6 +182,10 @@ void setup() {
   chn_button[0].begin(6); chn_button[1].begin(7); chn_button[2].begin(15);
   chn_button[3].begin(16); chn_button[4].begin(17); chn_button[5].begin(18);
 
+  // Initialize knob button
+  knob_switch.begin(13);
+  pinMode(CLK, INPUT); pinMode(DT, INPUT);
+
   // Startup I2C
   Wire.begin(); // (SDA, SCL)
 
@@ -191,13 +204,6 @@ void setup() {
   lcd.print("DIP E036");
   lcd.setCursor(2, 1);
   lcd.print("FM Receiver");
-
-  // // Setup values
-  // curr_analogfreq = convert_freq(analogRead(FRQ_TUNE));
-  // prev_analogfreq = curr_analogfreq;
-  // temp_analogfreq = curr_analogfreq;
-  // curr_analogvol = analogRead(VOL_ADJS);
-  // prev_analogvol = curr_analogvol;
 
   // clear RDS text just in case
   clear_radiotext(radiotext_A, radiotext_B);
@@ -227,6 +233,10 @@ void setup() {
   // Open web server
   WifiAP_begin();
   ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext);
+
+  // Initialize knob
+  attachInterrupt(digitalPinToInterrupt(CLK), updatestate_ISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(DT), updatestate_ISR, CHANGE);
 }
 
 // Loops while device is running
@@ -234,41 +244,88 @@ void loop() {
   // ignores all operations if device is scanning
   ready_state = !seeking(requested_data);
   if(ready_state == true) {
-    // Frequency knob read, with smoothing (channel)
-    // temp_analogfreq += 0.25 * (convert_freq(analogRead(FRQ_TUNE)) - temp_analogfreq);
-    // curr_analogfreq = 10 * round_int(temp_analogfreq / 10);
-    // volume knob read, with smoothing (reading value)
-    // curr_analogvol += round_int(0.5 * (analogRead(VOL_ADJS) - curr_analogvol));
-    // update all button states per loop
     l_key.update(); r_key.update();
     for(int i=1; i<=6; i++) {
       chn_button[i-1].update();
     }
+    knob_switch.update();
+
     scan_ongoing = false;
 
     //----------------KNOBS---------------//
+    // Toggle knob state if pressed and released
+    if(knob_switch.release()) {
+      knob_state = !knob_state;
+      if(knob_state) {
+        Serial.println("Knob mode: frequency");
+      }
+      else {
+        Serial.println("Knob mode: volume");
+      }
+    }
+    // clockwise detected
+    else if(direction == 1) {
+      Serial.println("Knob turned clockwise");
+      // frequency mode
+      if(knob_state) {
+        // update current freq
+        if(curr_freq == FREQ_MAX) {
+          curr_freq = FREQ_MIN;
+        }
+        else {
+          curr_freq += 1;
+        }
 
-    // // change in frequency knob
-    // if(curr_analogfreq != prev_analogfreq) {
-    //   // update current frequency
-    //   curr_freq = curr_analogfreq;
-    //   change_freq(tune_config, curr_freq);
-    // }
-    // change in volume knob
-    // else if(convert_vol(curr_analogvol) != convert_vol(prev_analogvol)) {
-    // if(convert_vol(curr_analogvol) != convert_vol(prev_analogvol)) {
-    //   last_vol_adj = millis();
+        // update ic freq
+        change_freq(tune_config, curr_freq);
+      }
+      // volume mode
+      else {
+        last_vol_adj = millis();
 
-    //   // adjust volume, update current vol
-    //   curr_vol = convert_vol(curr_analogvol);
-    //   change_vol(tune_config, curr_vol);
-    // }
+        if(curr_vol != 15) {
+          curr_vol += 1;
+        }
+        change_vol(tune_config, curr_vol);
+      }
+
+      direction = 0;
+    }
+    // anticlockwise detected
+    else if(direction == -1) {
+      Serial.println("Knob turned anticlockwise");
+
+      // frequency mode
+      if(knob_state) {
+        // update current freq
+        if(curr_freq == FREQ_MIN) {
+          curr_freq = FREQ_MAX;
+        }
+        else {
+          curr_freq -= 1;
+        }
+
+        // update ic freq
+        change_freq(tune_config, curr_freq);
+      }
+      // volume mode
+      else {
+        last_vol_adj = millis();
+
+        if(curr_vol != 0) {
+          curr_vol -= 1;
+        }
+        change_vol(tune_config, curr_vol);
+      }
+
+      direction = 0;
+    }
+
 
     //--------------BUTTONS--------------//
 
     // press detected for left button, short press-tune, long press-scan
-    // else if(l_key.debounce()) {
-    if(l_key.debounce()) {
+    else if(l_key.debounce()) {
       Serial.println("Left key pressed.");
 
       // update current freq
@@ -540,20 +597,23 @@ void loop() {
   }
   loop_num++;
 
-  // // Temporary recording of RDS data, to be removed
-  // Serial.print("[RDS] "); Serial.print(curr_freq); Serial.print(", , ");
-  // for(int index = 4; index < 12; index++) {
-  //   uint8_t byte = requested_data[index];
-  //   for (int i = 7; i >= 0; i--) {
-  //     Serial.print((byte >> i) & 1);
-  //   }
-  //   Serial.print(", ");
-  //   if(index % 2 == 1) {
-  //     Serial.print(", ");
-  //   }
-  // }
-  // Serial.println("");
-
   // delay
   delay(1);
+}
+
+void updatestate_ISR() {
+  uint8_t clk_input = digitalRead(CLK);
+  uint8_t dt_input = digitalRead(DT);
+  if((clk_state & 1) != clk_input || (dt_state & 1) != dt_input) {
+    clk_state = clk_state << 1 | clk_input | 0b11111000;
+    dt_state = dt_state << 1 | dt_input | 0b11111000;
+    if(clk_state == 0b11111100 && dt_state == 0b11111110) {
+      direction = 1;
+      clk_state = 0b11111000; dt_state = 0b11111000;
+    }
+    else if(clk_state == 0b11111110 && dt_state == 0b11111100) {
+      direction = -1;
+      clk_state = 0b11111000; dt_state = 0b11111000;
+    }
+  }
 }

@@ -11,9 +11,9 @@
 // analogRead() highest value, 2^bits-1
 #define AMAX 4095
 
-// pin numbers
-#define FRQ_TUNE 10
-#define VOL_ADJS 11
+// knob pin numbers
+#define CLK 11
+#define DT 12
 
 // default frequency and volume levels
 #define FREQ_DEFAULT 870

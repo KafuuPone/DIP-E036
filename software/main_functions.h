@@ -428,14 +428,4 @@ void update_radiotext(const uint8_t* arr, char* arr_A, char* arr_B, bool version
   }
 }
 
-// converts analog signal from knob to frequency, resolution to closest 1MHz since knob is too sensitive
-int convert_freq(int analog) {
-  return 10 * round_int((((FREQ_MAX - FREQ_MIN) * (float)analog) / AMAX + FREQ_MIN) / 10);
-}
-
-// converts analog signal from knob to volume
-int convert_vol(int analog) {
-  return round_int((15.0 * analog) / AMAX);
-}
-
 #endif
