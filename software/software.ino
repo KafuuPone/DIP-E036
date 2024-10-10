@@ -244,6 +244,7 @@ void loop() {
   // ignores all operations if device is scanning
   ready_state = !seeking(requested_data);
   if(ready_state == true) {
+    //-----------UPDATE BUTTON AND KNOB STATES------//
     l_key.update(); r_key.update();
     for(int i=1; i<=6; i++) {
       chn_button[i-1].update();
@@ -252,15 +253,38 @@ void loop() {
 
     scan_ongoing = false;
 
-    //----------------KNOBS---------------//
+    //----------------KNOB----------------//
+    // Memory clear activated
+    if(knob_switch.start_custom_longpress()) {
+      // Clear memory
+      clear_memory();
+
+      // Progress bar interval 10%, 0.2 sec
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Clearing memory");
+      for(int i=0; i<=10; i++) {
+        // progress bar
+        if(i > 0) {
+          lcd.setCursor(i-1, 1);
+          lcd.write(5);
+        }
+        // percent
+        lcd.setCursor(10, 1);
+        lcd.print(i*10); lcd.print("%");
+        delay(100);
+      }
+    }
     // Toggle knob state if pressed and released
-    if(knob_switch.release()) {
+    else if(knob_switch.release()) {
       knob_state = !knob_state;
       if(knob_state) {
         Serial.println("Knob mode: frequency");
       }
       else {
         Serial.println("Knob mode: volume");
+        // display volume symbol
+        last_vol_adj = millis();
       }
     }
     // clockwise detected
@@ -398,7 +422,7 @@ void loop() {
       }
     }
 
-    // Operations from Wi-Fi
+    //----------------WIFI OPERATIONS----------------//
     if(wifi_freq_update != 0xff) {
       curr_freq = wifi_freq_update;
       change_freq(tune_config, curr_freq);
@@ -427,6 +451,8 @@ void loop() {
       // After tuning down
       wifi_tune_update = "Nan";
     }
+
+    //------------------DISPLAY OPERATIONS--------------//
 
     // after all control operations
     // Read registry data of RDA5807
@@ -554,10 +580,18 @@ void loop() {
       }
     }
 
+    //------------END OF LOOP OPERATIONS-------------//
+
+    // Check if volume or frequency is out of range
+    if(curr_freq < FREQ_MIN || curr_freq > FREQ_MAX) {
+      curr_freq = FREQ_DEFAULT;
+    }
+    if(curr_vol < 0 || curr_vol > 15) {
+      curr_vol = VOL_DEFAULT;
+    }
+
     // update previous freq as current freq
     prev_freq = curr_freq;
-    // prev_analogfreq = curr_analogfreq;
-    // prev_analogvol = curr_analogvol;
   }
   else {
     Serial.println("Not ready");

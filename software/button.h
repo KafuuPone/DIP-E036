@@ -6,9 +6,14 @@ class Button {
     uint8_t btn; // pin number
     uint8_t btn_state;
     unsigned long last_debounce_time = 0;
+    // basic long press - 0.5s
     bool longpress_state = false;
     bool prev_longpress_state = false;
     bool start_longpress_state = false;
+    // custom long press - 5s
+    bool custom_longpress_state = false;
+    bool prev_custom_longpress_state = false;
+    bool start_custom_longpress_state = false;
 
   public:
     // initialize button
@@ -28,13 +33,16 @@ class Button {
         last_debounce_time = millis();
       }
 
-      // if in long press mode, update (here we set duration to 1s = 1000ms)
+      // if in long press mode, update (here we set duration to 500ms and 5s)
       longpress_state = (fully_pressed() && (millis() - last_debounce_time > 500));
+      custom_longpress_state = (fully_pressed() && (millis() - last_debounce_time > 5000));
 
       // check if it toggled
       start_longpress_state = (prev_longpress_state == false) && (longpress_state == true);
+      start_custom_longpress_state = (prev_custom_longpress_state == false) && (custom_longpress_state == true);
       // update previous state
       prev_longpress_state = longpress_state;
+      prev_custom_longpress_state = custom_longpress_state;
     }
 
     // detects for sequence 100000000 for last 9 bits
@@ -56,6 +64,11 @@ class Button {
     // true if long press is activated
     bool start_longpress() {
       return start_longpress_state;
+    }
+
+    // true if custom length long press is activated
+    bool start_custom_longpress() {
+      return start_custom_longpress_state;
     }
 
     uint16_t state() {

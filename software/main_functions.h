@@ -8,26 +8,6 @@
 
 #include "constants.h"
 
-// difference between 2 numbers
-int difference(int a, int b) {
-  if(a > b) {
-    return a - b;
-  }
-  else {
-    return b - a;
-  }
-}
-
-// round to integer
-int round_int(float x) {
-  if(x - (int)x < 0.5) {
-    return (int)x;
-  }
-  else {
-    return (int)x + 1;
-  }
-}
-
 // Conversion from frequency to individual bits
 uint8_t freq_byte1(int frequency) {
   uint8_t channel = frequency - FREQ_MIN;
@@ -58,7 +38,15 @@ void change_freq(uint8_t* arr, int frequency) {
 }
 
 // Change volume output for RDA5807 (arr=tuned_config[])
-void change_vol(const uint8_t* arr, uint8_t volume) {
+void change_vol(uint8_t* arr, uint8_t volume) {
+  // if volume = 0, change outside tune config to mute
+  if(volume == 0) {
+    arr[0] = 0b10000000;
+  }
+  else {
+    arr[0] = 0b11000000;
+  }
+
   // take last 4 bits
   uint8_t volume_bytes = 0b1111 & volume;
 
@@ -425,6 +413,24 @@ void update_radiotext(const uint8_t* arr, char* arr_A, char* arr_B, bool version
     for(int i=0; i<2; i++) {
       arr_B[segment_address*2 + i] = rds_byte_to_char(arr[10+i]);
     }
+  }
+}
+
+// clear NVS memory
+void clear_memory() {
+  // Initialize the NVS
+  esp_err_t err = nvs_flash_init();
+  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+      nvs_flash_erase(); // Erase the entire NVS partition
+      nvs_flash_init();  // Re-initialize NVS after erasing
+  }
+
+  // Clear NVS
+  err = nvs_flash_erase();  // This will clear all the data stored in NVS
+  if (err == ESP_OK) {
+      printf("NVS erased successfully!\n");
+  } else {
+      printf("Error erasing NVS: %s\n", esp_err_to_name(err));
   }
 }
 
