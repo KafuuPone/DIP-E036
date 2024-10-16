@@ -11,9 +11,6 @@
 #include "wifi_functions.h"       // Functions for Wi-Fi and web server
 
 // Setup global variables
-// float alpha = 0.2;
-// int curr_analogfreq; int prev_analogfreq; float temp_analogfreq;
-// int curr_analogvol; int prev_analogvol;
 unsigned long last_vol_adj = 0;
 unsigned long loop_num = 1;
 int saved_channels[] = {
@@ -175,7 +172,6 @@ AsyncWebServer server(80);
 
 void setup() {
   Serial.begin(115200); // serial communication speed 115200 bps
-  analogReadResolution(12); // Set analog read resolution: 16 bits
 
   // Initialize buttons
   l_key.begin(4); r_key.begin(5);
@@ -183,7 +179,7 @@ void setup() {
   chn_button[3].begin(16); chn_button[4].begin(17); chn_button[5].begin(18);
 
   // Initialize knob button
-  knob_switch.begin(13);
+  knob_switch.begin(13, false);
   pinMode(CLK, INPUT); pinMode(DT, INPUT);
 
   // Startup I2C
@@ -227,7 +223,6 @@ void setup() {
   delay(3000);
   lcd.clear();
   // unmute
-  tune_config[0] = 0b11000000;
   change_vol(tune_config, curr_vol);
 
   // Open web server
@@ -259,6 +254,11 @@ void loop() {
       // Clear memory
       clear_memory();
 
+      // Clear the temp storage
+      for(int i=0; i<8; i++) {
+        saved_channels[i] = read_channel(i+1);
+      }
+
       // Progress bar interval 10%, 0.2 sec
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -274,6 +274,8 @@ void loop() {
         lcd.print(i*10); lcd.print("%");
         delay(100);
       }
+
+      lcd.clear();
     }
     // Toggle knob state if pressed and released
     else if(knob_switch.release()) {
@@ -537,7 +539,7 @@ void loop() {
     RDS_radiotext = radio_text;
 
     // volume (when adjusting volume, will delay for 1s after done adjustment)
-    if(millis() - last_vol_adj < 1000) {
+    if(millis() - last_vol_adj < 2000) {
       lcd.setCursor(0, 1);
       lcd.write(4); // volume symbol
       for(int i=1; i<=15; i++) {
@@ -596,13 +598,17 @@ void loop() {
   else {
     Serial.println("Not ready");
 
+    // Read registry data of RDA5807
+    request_data(requested_data);
+
     // Top row update current frequency (read from ic) and signal
     update_freq(requested_data, &curr_freq);
     display_freq(curr_freq, &lcd);
     display_signal(requested_data, &lcd);
 
-    // Read registry data of RDA5807
-    request_data(requested_data);
+    // Update tune_config for current frequency
+    tune_config[2] = freq_byte1(curr_freq);
+    tune_config[3] = freq_byte2(curr_freq) | (tune_config[3] & 0b111111);
     
     if(scan_ongoing) {
       Serial.println("Scanning...");      
@@ -638,15 +644,21 @@ void loop() {
 void updatestate_ISR() {
   uint8_t clk_input = digitalRead(CLK);
   uint8_t dt_input = digitalRead(DT);
+  // New input is different than past input
   if((clk_state & 1) != clk_input || (dt_state & 1) != dt_input) {
+    // Update states
     clk_state = clk_state << 1 | clk_input | 0b11111000;
     dt_state = dt_state << 1 | dt_input | 0b11111000;
+    // Clockwise detected
     if(clk_state == 0b11111100 && dt_state == 0b11111110) {
       direction = 1;
+      // Reset state
       clk_state = 0b11111000; dt_state = 0b11111000;
     }
+    // Anticlockwise detected
     else if(clk_state == 0b11111110 && dt_state == 0b11111100) {
       direction = -1;
+      // Reset state
       clk_state = 0b11111000; dt_state = 0b11111000;
     }
   }

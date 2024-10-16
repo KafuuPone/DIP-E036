@@ -18,7 +18,7 @@ uint8_t freq_byte2(int frequency) {
   return (channel & 0b11) << 6; // gets last 2 bits, then shifts left 6 bits
 }
 
-// Changing frequency in datastream (frequency = MHz / 0.1MHz) (arr=tuned_config[])
+// Changing frequency in datastream (frequency = MHz / 0.1MHz) (arr=tuned_config[], frequency=curr_freq)
 void change_freq(uint8_t* arr, int frequency) {
   if(FREQ_MIN <= frequency && frequency <= FREQ_MAX) {
     arr[2] = freq_byte1(frequency);

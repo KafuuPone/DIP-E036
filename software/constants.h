@@ -8,9 +8,6 @@
 #define RDA5807M_ADDRESS 0x10
 #define LCD_ADDRESS 0x27
 
-// analogRead() highest value, 2^bits-1
-#define AMAX 4095
-
 // knob pin numbers
 #define CLK 11
 #define DT 12
