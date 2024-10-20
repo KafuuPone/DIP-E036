@@ -7,13 +7,24 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 I2SStream i2s;
 BluetoothA2DPSink a2dp_sink(i2s);
 
-void initialize_bluetooth(){
-  Serial.println("switch to bluetooth mode");
+// Function to turn on Bluetooth
+void enable_bluetooth(){
+  Serial.println("Bluetooth mode enabled.");
   lcd.clear();
   lcd.setCursor(0,0);
+
   a2dp_sink.start("Wireless_speaker_demo");
+
   lcd.print("Bluetooth Mode");
-} 
+}
+
+// Function to turn off Bluetooth
+void disable_bluetooth() {
+  Serial.println("Bluetooth mode disabled.");
+  a2dp_sink.stop(); // Stop the Bluetooth sink
+
+  lcd.clear();
+}
 
 void setup() {
   Serial.begin(115200);  // Start serial communication
@@ -28,7 +39,7 @@ void setup() {
   cfg.pin_data = 22; // to DIN
   i2s.begin(cfg);
 
-  initialize_bluetooth(); 
+  enable_bluetooth(); 
 }
 
 void loop() {
