@@ -4906,7 +4906,7 @@
 			)
 		)
 	)
-	(global_label "5V"
+	(global_label "3V3"
 		(shape input)
 		(at 133.35 160.02 90)
 		(fields_autoplaced yes)
