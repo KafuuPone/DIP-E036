@@ -320,177 +320,6 @@
 				)
 			)
 		)
-		(symbol "DIP_symbols:ESP-WROOM-32"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "U"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "ESP-WROOM-32"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "ESP-WROOM-32_0_1"
-				(rectangle
-					(start -7.62 -3.048)
-					(end 7.62 -25.908)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-			)
-			(symbol "ESP-WROOM-32_1_1"
-				(pin bidirectional line
-					(at -10.16 -13.97 0)
-					(length 2.54)
-					(name "D2(BCK)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at -10.16 -8.89 0)
-					(length 2.54)
-					(name "D21(SDA)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at -10.16 -6.35 0)
-					(length 2.54)
-					(name "D22(SCL)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at -10.16 -16.51 0)
-					(length 2.54)
-					(name "D4(WS)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at -10.16 -19.05 0)
-					(length 2.54)
-					(name "D5(DATA)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin output line
-					(at -10.16 -22.86 0)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "DIP_symbols:ESP32-S3"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -2715,6 +2544,195 @@
 				)
 			)
 		)
+		(symbol "ESP-WROOM-32_1"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "ESP-WROOM-32"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "ESP-WROOM-32_1_0_1"
+				(rectangle
+					(start -7.62 -3.048)
+					(end 7.62 -27.432)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "ESP-WROOM-32_1_1_1"
+				(pin power_in line
+					(at -10.16 -5.08 0)
+					(length 2.54)
+					(name "5V"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -16.51 0)
+					(length 2.54)
+					(name "D2(BCK)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -11.43 0)
+					(length 2.54)
+					(name "D21(SDA)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -8.89 0)
+					(length 2.54)
+					(name "D22(SCL)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -19.05 0)
+					(length 2.54)
+					(name "D4(WS)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -21.59 0)
+					(length 2.54)
+					(name "D5(DATA)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at -10.16 -25.4 0)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Switch:SW_Push"
 			(pin_numbers hide)
 			(pin_names
@@ -3678,6 +3696,16 @@
 	)
 	(wire
 		(pts
+			(xy 231.14 49.53) (xy 231.14 44.45)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c007f90-4591-40c6-a2db-574c54ecb537")
+	)
+	(wire
+		(pts
 			(xy 207.01 132.08) (xy 204.47 132.08)
 		)
 		(stroke
@@ -4518,6 +4546,16 @@
 	)
 	(wire
 		(pts
+			(xy 237.49 49.53) (xy 231.14 49.53)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba6ac1b9-7301-4984-b1cb-41e868815603")
+	)
+	(wire
+		(pts
 			(xy 30.48 57.15) (xy 30.48 120.65)
 		)
 		(stroke
@@ -4538,7 +4576,7 @@
 	)
 	(wire
 		(pts
-			(xy 231.14 69.85) (xy 231.14 74.93)
+			(xy 231.14 69.85) (xy 231.14 73.66)
 		)
 		(stroke
 			(width 0)
@@ -5039,7 +5077,7 @@
 	)
 	(text "Provides Classic Bluetooth\n(Supports audio streaming)"
 		(exclude_from_sim no)
-		(at 254.762 45.72 0)
+		(at 259.08 40.132 0)
 		(effects
 			(font
 				(size 1.75 1.75)
@@ -5152,6 +5190,28 @@
 		(uuid "30661894-01ad-4bcf-bedd-e0a869a38865")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 55.88 23.9872 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "5V"
+		(shape input)
+		(at 231.14 44.45 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "6812a6be-aae4-4d59-a370-75bf315f35cc")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 231.14 37.9572 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5987,7 +6047,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 231.14 74.93 0)
+		(at 231.14 73.66 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5996,7 +6056,7 @@
 		(fields_autoplaced yes)
 		(uuid "55778d25-3d45-4b19-99c8-c30cb8c11782")
 		(property "Reference" "#PWR011"
-			(at 231.14 81.28 0)
+			(at 231.14 80.01 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6005,7 +6065,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 231.14 80.01 0)
+			(at 231.14 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6013,7 +6073,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 231.14 74.93 0)
+			(at 231.14 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6022,7 +6082,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 231.14 74.93 0)
+			(at 231.14 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6031,7 +6091,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 231.14 74.93 0)
+			(at 231.14 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7151,88 +7211,6 @@
 		)
 	)
 	(symbol
-		(lib_id "DIP_symbols:ESP-WROOM-32")
-		(at 247.65 46.99 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "a8549c4d-f9e0-4643-8c0d-26c40d9d9e79")
-		(property "Reference" "U6"
-			(at 256.54 60.1979 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "ESP-WROOM-32"
-			(at 256.54 62.7379 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 247.65 46.99 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 247.65 46.99 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 247.65 46.99 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin ""
-			(uuid "d71afc19-750e-42b4-89d7-a84e6bd8fad9")
-		)
-		(pin ""
-			(uuid "c761bb7d-bd4d-4be3-a447-a39ed0bc9e53")
-		)
-		(pin ""
-			(uuid "98f7eadf-29c4-4311-aeb1-272d14986c51")
-		)
-		(pin ""
-			(uuid "133f04fe-8361-48bd-b0a3-17c15f8729ff")
-		)
-		(pin ""
-			(uuid "5cd40e01-dd5c-4a2f-aa99-6f22337c136c")
-		)
-		(pin ""
-			(uuid "9cbdd0f6-bb52-4bda-98f3-1c553f87436e")
-		)
-		(instances
-			(project ""
-				(path "/e4ac0108-b4d8-4685-aa5b-dfce1ac93b82"
-					(reference "U6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Switch:SW_Push")
 		(at 25.4 135.89 90)
 		(mirror x)
@@ -7668,6 +7646,92 @@
 			(project "Schematic_RDA5807"
 				(path "/e4ac0108-b4d8-4685-aa5b-dfce1ac93b82"
 					(reference "#PWR01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_name "ESP-WROOM-32_1")
+		(lib_id "DIP_symbols:ESP-WROOM-32")
+		(at 247.65 44.45 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e905a5ed-fabe-4232-ae81-c3e25388abf2")
+		(property "Reference" "U8"
+			(at 256.54 58.4199 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ESP-WROOM-32"
+			(at 256.54 60.9599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 247.65 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 247.65 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 247.65 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin ""
+			(uuid "f2f38618-7ff7-4582-a863-51515cb62067")
+		)
+		(pin ""
+			(uuid "a8f62f9f-d637-4f6e-814d-29b9b9dcc6a0")
+		)
+		(pin ""
+			(uuid "62aae37a-c5e4-453d-987d-a41c782ba49c")
+		)
+		(pin ""
+			(uuid "004e4591-7bfd-450d-bf4e-5a6977af0a53")
+		)
+		(pin ""
+			(uuid "7ef5578f-0dcd-4637-beba-78aa1308b22b")
+		)
+		(pin ""
+			(uuid "234c8714-7141-41fb-8f4f-77a34f85a0ea")
+		)
+		(pin ""
+			(uuid "b705b7f5-1693-4b43-ac3f-cc7b0dd982fe")
+		)
+		(instances
+			(project ""
+				(path "/e4ac0108-b4d8-4685-aa5b-dfce1ac93b82"
+					(reference "U8")
 					(unit 1)
 				)
 			)

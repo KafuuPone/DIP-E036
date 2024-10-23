@@ -1751,7 +1751,7 @@
 		(symbol "ESP-WROOM-32_0_1"
 			(rectangle
 				(start -7.62 -3.048)
-				(end 7.62 -25.908)
+				(end 7.62 -27.432)
 				(stroke
 					(width 0)
 					(type default)
@@ -1762,46 +1762,10 @@
 			)
 		)
 		(symbol "ESP-WROOM-32_1_1"
-			(pin bidirectional line
-				(at -10.16 -13.97 0)
+			(pin power_in line
+				(at -10.16 -5.08 0)
 				(length 2.54)
-				(name "D2(BCK)"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(number ""
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-			)
-			(pin bidirectional line
-				(at -10.16 -8.89 0)
-				(length 2.54)
-				(name "D21(SDA)"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(number ""
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-			)
-			(pin bidirectional line
-				(at -10.16 -6.35 0)
-				(length 2.54)
-				(name "D22(SCL)"
+				(name "5V"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -1819,7 +1783,43 @@
 			(pin bidirectional line
 				(at -10.16 -16.51 0)
 				(length 2.54)
-				(name "D4(WS)"
+				(name "D2(BCK)"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin bidirectional line
+				(at -10.16 -11.43 0)
+				(length 2.54)
+				(name "D21(SDA)"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin bidirectional line
+				(at -10.16 -8.89 0)
+				(length 2.54)
+				(name "D22(SCL)"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -1837,6 +1837,24 @@
 			(pin bidirectional line
 				(at -10.16 -19.05 0)
 				(length 2.54)
+				(name "D4(WS)"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin bidirectional line
+				(at -10.16 -21.59 0)
+				(length 2.54)
 				(name "D5(DATA)"
 					(effects
 						(font
@@ -1852,8 +1870,8 @@
 					)
 				)
 			)
-			(pin output line
-				(at -10.16 -22.86 0)
+			(pin power_out line
+				(at -10.16 -25.4 0)
 				(length 2.54)
 				(name "GND"
 					(effects
