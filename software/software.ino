@@ -293,13 +293,13 @@ void loop() {
       // Turn on/off bluetooth
       if(bluetooth_mode) {
         // Enable bluetooth
-        digitalWrite(ANALOG_SWITCH, HIGH);
+        digitalWrite(ANALOG_SWITCH, LOW);
         Serial.println("Bluetooth mode enabled.");
         // a2dp_sink.start("Wireless_speaker_demo");
       }
       else {
         // Disable bluetooth
-        digitalWrite(ANALOG_SWITCH, LOW);
+        digitalWrite(ANALOG_SWITCH, HIGH);
         Serial.println("Bluetooth mode disabled.");
         // a2dp_sink.stop();
       }
