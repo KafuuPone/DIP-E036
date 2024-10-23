@@ -34,9 +34,9 @@ void setup() {
 
   //Setup the bluetooth configuration
   auto cfg = i2s.defaultConfig(); //set the config to default: 44.1 kHz sample frequency and 16 bits per sample
-  cfg.pin_bck = 26; // to BCLK
-  cfg.pin_ws = 25; // to LCK
-  cfg.pin_data = 22; // to DIN
+  cfg.pin_bck = 2; // to BCLK
+  cfg.pin_ws = 4; // to LCK
+  cfg.pin_data = 5; // to DIN
   i2s.begin(cfg);
 
   enable_bluetooth(); 
