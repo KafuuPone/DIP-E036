@@ -12,6 +12,9 @@
 #define CLK 11
 #define DT 12
 
+// other pin numbers
+#define ANALOG_SWITCH 14
+
 // default frequency and volume levels
 #define FREQ_DEFAULT 870
 #define VOL_DEFAULT 4
