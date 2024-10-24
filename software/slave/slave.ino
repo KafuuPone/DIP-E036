@@ -36,7 +36,7 @@ void onReceive(int len) {
     bluetooth_mode = true;
   }
   else if (strcmp(temp, "BLUETOOTH OFF") == 0) {
-    a2dp_sink.stop();
+    a2dp_sink.end();
     bluetooth_mode = false;
   }
   else {
