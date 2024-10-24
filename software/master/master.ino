@@ -3,8 +3,7 @@
 #include "Wire.h"                 // I2C Communication
 #include "LiquidCrystal_I2C.h"    // LCD I2C library
 #include "ESPAsyncWebServer.h"    // Hosting web server
-// #include "AudioTools.h"           // Digital audio library
-// #include "BluetoothA2DPSink.h"    // Bluetooth library
+
 // Local libraries
 #include "constants.h"            // Constants header
 #include "main_functions.h"       // Main functions for RDA5807M
@@ -295,13 +294,21 @@ void loop() {
         // Enable bluetooth
         digitalWrite(ANALOG_SWITCH, LOW);
         Serial.println("Bluetooth mode enabled.");
-        // a2dp_sink.start("Wireless_speaker_demo");
+
+        // Sends request to slave
+        Wire.beginTransmission(I2C_DEV_ADDR);
+        Wire.printf("BLUETOOTH ON");
+        Wire.endTransmission();
       }
       else {
         // Disable bluetooth
         digitalWrite(ANALOG_SWITCH, HIGH);
         Serial.println("Bluetooth mode disabled.");
-        // a2dp_sink.stop();
+
+        // Sends request to slave
+        Wire.beginTransmission(I2C_DEV_ADDR);
+        Wire.printf("BLUETOOTH OFF");
+        Wire.endTransmission();
       }
       // Exit settings
       settings_mode = !settings_mode;
@@ -336,6 +343,17 @@ void loop() {
       lcd.write(6);
       lcd.print(" ");
 
+      // Retrieves bluetooth information from slave
+      uint8_t bytesReceived = Wire.requestFrom(I2C_DEV_ADDR, 1); // Reads 1 byte
+      // If received more than zero bytes
+      if ((bool)bytesReceived) {
+        uint8_t temp[bytesReceived]; // Received byte string
+        Wire.readBytes(temp, bytesReceived);
+        
+        
+      }
+
+      // Display information
       // If no device connected, top display 'not connected'
       // Else, top display device name(scroll if char length > 13)
       // If device connected, if song playing bottom display song name, else bottom display 'Nothing playing'
@@ -748,7 +766,7 @@ void loop() {
     }
   }
   
-  // delay
+  // delay 1ms
   delay(1);
 }
 

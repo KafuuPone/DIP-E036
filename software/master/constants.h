@@ -5,8 +5,10 @@
 #define FREQ_MAX 1080
 #define FREQ_MIN 870
 
+// I2C addresses
 #define RDA5807M_ADDRESS 0x10
 #define LCD_ADDRESS 0x27
+#define SLAVE_ADDRESS 0x55
 
 // knob pin numbers
 #define CLK 11
