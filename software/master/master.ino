@@ -192,9 +192,9 @@ void setup() {
   knob_switch.begin(13, false);
   pinMode(CLK, INPUT); pinMode(DT, INPUT);
 
-  // Pin to toggle analog switch
+  // Pin to toggle analog switch, initially radio mode
   pinMode(ANALOG_SWITCH, OUTPUT);
-  digitalWrite(ANALOG_SWITCH, LOW);
+  digitalWrite(ANALOG_SWITCH, HIGH);
 
   // Startup I2C
   Wire.begin(); // (SDA, SCL)
