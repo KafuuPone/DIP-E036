@@ -1,5 +1,6 @@
 // External libraries
-#include "string"
+#include "cstring"                // String functions
+#include "cstdlib"                // Standrad functions (malloc)
 #include "Wire.h"                 // I2C Communication
 #include "LiquidCrystal_I2C.h"    // LCD I2C library
 #include "ESPAsyncWebServer.h"    // Hosting web server
@@ -29,19 +30,23 @@ String RDS_radiotext = "";
 volatile uint8_t clk_state = 0b11111000;
 volatile uint8_t dt_state = 0b11111000;
 volatile int direction = 0;
-bool bluetooth_mode = false; // Default is radio mode
 bool settings_mode = false;
 bool rds_enabled = true;
+
+// Bluetooth data
+bool bluetooth_mode = false;
+uint8_t connection_state = 0; // 0 - OFF, 1 - CONNECTED, 2 - DISCONNECTED, 3 - CONNECTING, 4 - DISCONNECTING
+uint8_t playback_state = 0; // 0 - STOPPED, 1 - PLAYING, 2 - PAUSED, 3 - FWD SEEK, 4 - REV SEEK, 5 - ERROR
+char* device_name = (char*)malloc(1);
+char* media_title = (char*)malloc(1);
+char* media_artist = (char*)malloc(1);
+char* media_album = (char*)malloc(1);
 
 // channel = (frequency in MHz - 87.0) / 0.1
 // using 0.1Mhz as channel spacing
 
 // LCD
 LiquidCrystal_I2C lcd(LCD_ADDRESS, 16, 2); // 16x2 LCD
-
-// Bluetooth
-// I2SStream i2s;
-// BluetoothA2DPSink a2dp_sink(i2s);
 
 // Buttons
 Button l_key, r_key;
@@ -209,6 +214,7 @@ void setup() {
   lcd.createChar(4, sym_volume);
   lcd.createChar(5, sym_full);
   lcd.createChar(6, sym_bluetooth);
+  lcd.createChar(7, sym_play);
 
   // Welcome screen
   lcd.setCursor(4, 0); // (col index, row index)
@@ -296,9 +302,12 @@ void loop() {
         Serial.println("Bluetooth mode enabled.");
 
         // Sends request to slave
-        Wire.beginTransmission(I2C_DEV_ADDR);
+        Wire.beginTransmission(SLAVE_ADDRESS);
         Wire.printf("BLUETOOTH ON");
         Wire.endTransmission();
+
+        // Turn off web server
+        server.end();
       }
       else {
         // Disable bluetooth
@@ -306,9 +315,12 @@ void loop() {
         Serial.println("Bluetooth mode disabled.");
 
         // Sends request to slave
-        Wire.beginTransmission(I2C_DEV_ADDR);
+        Wire.beginTransmission(SLAVE_ADDRESS);
         Wire.printf("BLUETOOTH OFF");
         Wire.endTransmission();
+
+        // Turn web server back on
+        ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext);
       }
       // Exit settings
       settings_mode = !settings_mode;
@@ -337,26 +349,258 @@ void loop() {
   // Usual operation modes
   else {
     // Bluetooth mode
-    if(bluetooth_mode) {
-      // bluetooth symbol
-      lcd.setCursor(0, 0);
-      lcd.write(6);
-      lcd.print(" ");
-
+    if(bluetooth_mode) {      
       // Retrieves bluetooth information from slave
-      uint8_t bytesReceived = Wire.requestFrom(I2C_DEV_ADDR, 1); // Reads 1 byte
-      // If received more than zero bytes
-      if ((bool)bytesReceived) {
-        uint8_t temp[bytesReceived]; // Received byte string
-        Wire.readBytes(temp, bytesReceived);
-        
-        
+      uint8_t packet_index;
+      uint8_t packet_num;
+      // Retrieve first packet first
+      uint8_t bytesReceived = Wire.requestFrom(SLAVE_ADDRESS, 32); // Reads 1 packet = 32 bytes
+      if(bytesReceived != 32) {
+        Serial.println("Error occured, received packet is not 32 bytes");
+      }
+      uint8_t first_packet[32]; // Received byte string
+      Wire.readBytes(first_packet, 32);
+      // Determine packet index and total packet number
+      packet_index = first_packet[0];
+      if(packet_index != 0) {
+        Serial.println("Error occured, first packet received is not indexed 0");
+      }
+      packet_num = first_packet[1];
+      // Create datastring
+      uint8_t* datastring = (uint8_t*)malloc(30 * packet_num);
+      // Save the first received byte in datastring
+      for(int i=0; i<30; i++) {
+        datastring[30*packet_index + i] = first_packet[2 + i];
       }
 
-      // Display information
+      // Save the rest of the bytes
+      for(; packet_index<packet_num; packet_index++) {
+        // Requests packet
+        uint8_t bytesReceived = Wire.requestFrom(SLAVE_ADDRESS, 32); // Reads 1 packet = 32 bytes
+        if(bytesReceived != 32) {
+          Serial.println("Error occured, received packet is not 32 bytes");
+        }
+        uint8_t packet[32]; // Save byte into temp array
+        Wire.readBytes(packet, 32);
+        if(packet_index != packet[0]) {
+          Serial.println("Error occured, packet index mismatch");
+        }
+        if(packet_num != packet[1]) {
+          Serial.println("Error occured, total packet number mismatch");
+        }
+
+        // Saves packet
+        for(int i=0; i<30; i++) {
+          datastring[30*packet_index + i] = packet[2 + i];
+        }
+      }
+
+      // Double check if packet is valid (has 7 variables), also to retrieve separator index in datastring
+      int separator_count = 0;
+      uint8_t separator_pos[7]; // index position of separator 0x1d
+      for(int i=0; i<30*packet_num; i++) {
+        if(datastring[i] == 0x1d) {
+          separator_pos[separator_count] = i;
+          separator_count += 1;
+        }
+      }
+      if(separator_count != 7) {
+        Serial.println("Error occured, number of variables invalid");
+      }
+
+      // Use the datastring to update global bluetooth variables
+      // bluetooth_mode, 0, connection_state, 1, playback_state, 2
+      // device_name, 3, media_title, 4, media_artist, 5, media_album, 6
+      for(int i=0; i<30*packet_num; i++) {
+        // bluetooth_mode ignored
+        // connection_state
+        if(i == separator_pos[1] - 1) {
+          connection_state = datastring[i];
+        }
+        // playback_state
+        else if(i == separator_pos[2] - 1) {
+          playback_state = datastring[i];
+        }
+        // device_name
+        else if(i > separator_pos[2] && i < separator_pos[3]) {
+          // Create new variable
+          if(i == separator_pos[2] + 1) {
+            free(device_name);
+            device_name = (char*)malloc(separator_pos[3] - separator_pos[2]); // including terminator
+            device_name[0] = datastring[i];
+          }
+          else {
+            device_name[i - (separator_pos[2] + 1)] = datastring[i];
+            // if last char, add a terminator 
+            if(i == separator_pos[3] - 1) {
+              device_name[separator_pos[3] - separator_pos[2] - 1] = '\0';
+            }
+          }
+        }
+        // media_title
+        else if(i > separator_pos[3] && i < separator_pos[4]) {
+          // Create new variable
+          if(i == separator_pos[3] + 1) {
+            free(media_title);
+            media_title = (char*)malloc(separator_pos[4] - separator_pos[3]); // including terminator
+            media_title[0] = datastring[i];
+          }
+          else {
+            media_title[i - (separator_pos[3] + 1)] = datastring[i];
+            // if last char, add a terminator 
+            if(i == separator_pos[4] - 1) {
+              media_title[separator_pos[4] - separator_pos[3] - 1] = '\0';
+            }
+          }
+        }
+        // media_artist
+        else if(i > separator_pos[4] && i < separator_pos[5]) {
+          // Create new variable
+          if(i == separator_pos[4] + 1) {
+            free(media_artist);
+            media_artist = (char*)malloc(separator_pos[5] - separator_pos[4]); // including terminator
+            media_artist[0] = datastring[i];
+          }
+          else {
+            media_artist[i - (separator_pos[4] + 1)] = datastring[i];
+            // if last char, add a terminator 
+            if(i == separator_pos[5] - 1) {
+              media_artist[separator_pos[5] - separator_pos[4] - 1] = '\0';
+            }
+          }
+        }
+        // media_album
+        else if(i > separator_pos[5] && i < separator_pos[6]) {
+          // Create new variable
+          if(i == separator_pos[5] + 1) {
+            free(media_album);
+            media_album = (char*)malloc(separator_pos[6] - separator_pos[5]); // including terminator
+            media_album[0] = datastring[i];
+          }
+          else {
+            media_album[i - (separator_pos[5] + 1)] = datastring[i];
+            // if last char, add a terminator 
+            if(i == separator_pos[6] - 1) {
+              media_album[separator_pos[6] - separator_pos[5] - 1] = '\0';
+            }
+          }
+        }
+      }
+
+      // Display information using bluetooth variables
+      // bluetooth symbol, top right first 2 chars
+      lcd.setCursor(0, 0);
+      lcd.write(6); lcd.print(" ");
       // If no device connected, top display 'not connected'
-      // Else, top display device name(scroll if char length > 13)
-      // If device connected, if song playing bottom display song name, else bottom display 'Nothing playing'
+      if(connection_state == 2) {
+        lcd.print("Not connected ");
+      }
+      else if(connection_state == 3) {
+        lcd.print("Connecting    ");
+      }
+      else if(connection_state == 4) {
+        lcd.print("Disconnecting ");
+      }
+      // Device connected
+      else if(connection_state == 1) {
+        // Nothing is playing
+        if(playback_state == 0) {
+          // Display device name on top, bottom is empty (scroll if device name is > 14)
+          // Short text, no scrolling
+          if(strlen(device_name) <= 14) {
+            for(int i=0; i<14; i++) {
+              if(i < strlen(device_name)) {
+                lcd.print(device_name[i]);
+              }
+              else {
+                lcd.print(" ");
+              }
+            }
+          }
+          // Scrolling
+          else {
+            int offset = (millis() / TITLE_SCROLL) % (strlen(device_name) + 3); // 3 spaces between end and beginning
+            for(int i=0; i<14; i++) {
+              int index = (i + offset) % (strlen(device_name) + 3);
+              if(index < strlen(device_name)) {
+                lcd.print(device_name[index]);
+              }
+              else {
+                lcd.print(" ");
+              }
+            }
+          }
+
+          // Bottom display
+          lcd.setCursor(0, 1);
+          lcd.print("Nothing playing ");
+        }
+
+        // Paused or playing state or anything from 1-4
+        else if(1 <= playback_state && playback_state <= 4) {
+          // Top display song title
+          // playing AND too long, scroll
+          if(playback_state == 1 && strlen(media_title) > 14) {
+            int offset = (millis() / TITLE_SCROLL) % (strlen(media_title) + 3); // 3 spaces between end and beginning
+            for(int i=0; i<14; i++) {
+              int index = (i + offset) % (strlen(media_title) + 3);
+              if(index < strlen(media_title)) {
+                lcd.print(media_title[index]);
+              }
+              else {
+                lcd.print(" ");
+              }
+            }
+          }
+          // No scroll
+          else{
+            for(int i=0; i<14; i++) {
+              if(i < strlen(media_title)) {
+                lcd.print(media_title[i]);
+              }
+              else {
+                lcd.print(" ");
+              }
+            }
+          }
+
+          // Bottom display paused/playing logo
+          lcd.setCursor(0, 1);
+          if(playback_state == 2) {
+            lcd.print(0xfe); // pause
+          }
+          else {
+            lcd.write(7); // play
+          }
+          lcd.print(" ");
+          // Bottom display album name
+          if(strlen(media_artist) + strlen(media_album) != 0) {
+            for(int i=0; i<14; i++) {
+              if(i < strlen(media_artist)) {
+                lcd.print(media_artist[i]);
+              }
+              else if(i == strlen(media_artist)) {
+                lcd.print(" ");
+              }
+              else if(i == strlen(media_artist) + 1) {
+                lcd.print("|");
+              }
+              else if(i == strlen(media_artist) + 2) {
+                lcd.print(" ");
+              }
+              else if(i > strlen(media_artist) + 2 && i < strlen(media_artist) + strlen(media_album) + 3) {
+                lcd.print(media_album[i - (strlen(media_artist) + 3)]);
+              }
+              else {
+                lcd.print(" ");
+              }
+            }
+          }
+        }
+      }
+
+      // Free the datastring array
+      free(datastring);
     }
 
     // Radio mode
@@ -605,9 +849,23 @@ void loop() {
           }
         }
 
-        // determine what to display at the bottom
-        // RDS signal reading
-        if(rds_enabled) {
+        // volume (when adjusting volume, will delay for 1s after done adjustment)
+        if(millis() - last_vol_adj < 2000) {
+          lcd.setCursor(0, 1);
+          lcd.write(4); // volume symbol
+          for(int i=1; i<=15; i++) {
+            if(i <= curr_vol) {
+              lcd.write(5);
+            }
+            else {
+              lcd.print(" ");
+            }
+          }
+        }
+
+        // Display the RDS text if not adjusting volume and RDS mode is on
+        else if(rds_enabled) {
+          // Determining bottom display
           // Clear RDS radio text if changed frequency
           if(curr_freq != prev_freq) {
             Serial.println("Frequency changed, clearing RDS data.");
@@ -663,24 +921,7 @@ void loop() {
             }
           }
           RDS_radiotext = radio_text;
-        }
 
-        // volume (when adjusting volume, will delay for 1s after done adjustment)
-        if(millis() - last_vol_adj < 2000) {
-          lcd.setCursor(0, 1);
-          lcd.write(4); // volume symbol
-          for(int i=1; i<=15; i++) {
-            if(i <= curr_vol) {
-              lcd.write(5);
-            }
-            else {
-              lcd.print(" ");
-            }
-          }
-        }
-
-        // Display the RDS text if not adjusting volume and RDS mode is on
-        else if(rds_enabled) {
           // Starts printing
           lcd.setCursor(0, 1);
           // Short text, no scrolling

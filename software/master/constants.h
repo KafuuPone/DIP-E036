@@ -21,8 +21,9 @@
 #define FREQ_DEFAULT 870
 #define VOL_DEFAULT 4
 
-// RDS text auto-scrolling update interval in ms
+// Text auto-scrolling update interval in ms
 #define RDS_SCROLL 500
+#define TITLE_SCROLL 500
 
 // Wi-Fi
 #define WIFI_SSID "Webserver-demo"
