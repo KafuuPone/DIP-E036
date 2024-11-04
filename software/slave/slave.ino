@@ -94,14 +94,17 @@ void onReceive(int len) {
 
   // Do stuff
   if (strcmp(temp, "BLUETOOTH ON") == 0) {
-    a2dp_sink.start("Wireless_speaker");
+    a2dp_sink.start("DIP-E036 Speaker");
     bluetooth_mode = true;
     connection_state = 2; // DISCONNECTED
+    packet_index = 0;
+    Serial.println("Bluetooth ON");
   }
   else if (strcmp(temp, "BLUETOOTH OFF") == 0) {
     a2dp_sink.end();
     bluetooth_mode = false;
     connection_state = 0; // OFF
+    Serial.println("Bluetooth OFF");
   }
   else {
     Serial.print("Invalid signal received: ");
@@ -120,16 +123,21 @@ void onRequest() {
   // ensure packet index is within range
   packet_index %= packet_num;
   Wire.write(packet_index); // packet index
+  Serial.printf("%02x ", packet_index);
   Wire.write(packet_num); // total packet number
+  Serial.printf("%02x ", packet_num);
   // datastring from index 30*packet_index, padding with 0x00
   for(int i=0; i<30; i++) {
     if(30*packet_index + i < data_length) {
       Wire.write(datastring[30*packet_index + i]);
+      Serial.printf("%02x ", datastring[30*packet_index + i]);
     }
     else {
       Wire.write(0x00);
+      Serial.printf("%02x ", 0x00);
     }
   }
+  Serial.println("");
 
   // update packet index
   packet_index = (packet_index + 1) % packet_num;
