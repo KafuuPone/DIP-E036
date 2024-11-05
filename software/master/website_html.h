@@ -8,7 +8,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FM Radio Selector</title>
+  <title>Radio Mode</title>
 
   <style>
     body {
@@ -424,7 +424,7 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FM Radio Selector</title>
+  <title>Bluetooth Mode</title>
 
   <style>
     /* Centering the text */
@@ -432,15 +432,30 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
       height: 100%;
       margin: 0;
       display: flex;
+      flex-direction: column;
       justify-content: center;  /* Horizontal centering */
       align-items: center;      /* Vertical centering */
       font-family: Arial, sans-serif;
       background-color: #f0f0f0;
+      color: #333;
     }
     
     h1 {
       font-size: 2em;
-      color: #333;
+    }
+
+    .info-section {
+      width: 300px;
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #ffffff;
+      text-align: center;
+    }
+
+    .info {
+      margin: 5px 0;
     }
   </style>
 
@@ -457,14 +472,97 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
       });
     }
 
+    // Update bluetooth metadata and display
+    function updateMetadata() {
+      fetch('/bluetooth-metadata')
+      .then(response => response.json())
+      .then(data => {
+        // Update connection status
+        var connection_state = "Retrieving data...";
+        if(data.connection_state === "0") connection_state = "BLUETOOTH OFF";
+        else if(data.connection_state === "1") connection_state = "CONNECTED";
+        else if(data.connection_state === "2") connection_state = "DISCONNECTED";
+        else if(data.connection_state === "3") connection_state = "CONNECTING";
+        else if(data.connection_state === "4") connection_state = "DISCONNECTING";
+        document.getElementById('connection_state').innerText = `${connection_state}`;
+
+        // If not connected, hide everything, else display connected device and playback state
+        if(data.connection_state !== "1") {
+          document.getElementById('device_name').style.visibility = 'hidden';
+
+          document.getElementById('media_info').style.visibility = 'hidden';
+          document.getElementById('playback_state').style.visibility = 'hidden';
+          document.getElementById('media_title').style.visibility = 'hidden';
+          document.getElementById('media_artist').style.visibility = 'hidden';
+          document.getElementById('media_album').style.visibility = 'hidden';
+        }
+        else {
+          // Show device name
+          document.getElementById('device_name').style.visibility = 'visible';
+          document.getElementById('device_name').innerText = `Connected device: ${data.device_name}`;
+
+          // Show playing mode
+          var playback_state = "-";
+          if(data.playback_state === "0") playback_state = "STOPPED";
+          else if(data.playback_state === "1") playback_state = "PLAYING";
+          else if(data.playback_state === "2") playback_state = "PAUSED";
+          if(data.playback_state !== "0") {
+            document.getElementById('media_info').style.visibility = 'visible';
+
+            document.getElementById('playback_state').style.visibility = 'visible';
+            document.getElementById('playback_state').innerText = `${playback_state}`;
+          }
+          else {
+            document.getElementById('media_info').style.visibility = 'hidden';
+            document.getElementById('playback_state').style.visibility = 'hidden';
+          }
+
+          // If playing mode is stopped, display nothing afterwards, or else continue displaying
+          if(data.playback_state !== "0") {
+            // Display title
+            document.getElementById('media_title').style.visibility = 'visible';
+            document.getElementById('media_title').innerText = `${data.media_title}`;
+
+            // Display artist
+            document.getElementById('media_artist').style.visibility = 'visible';
+            document.getElementById('media_artist').innerText = `Artist: ${data.media_artist}`;
+
+            // Display album
+            document.getElementById('media_album').style.visibility = 'visible';
+            document.getElementById('media_album').innerText = `Album: ${data.media_album}`;
+          }
+          else {
+            document.getElementById('media_title').style.visibility = 'hidden';
+            document.getElementById('media_artist').style.visibility = 'hidden';
+            document.getElementById('media_album').style.visibility = 'hidden';
+          }
+        }
+      });
+    }
+
     // Run check bluetooth mode function every second
     var bluetoothUpdateId = setInterval(updateBluetoothMode, 1000);
+    var metadataUpdateId = setInterval(updateMetadata, 100);
+
+    // Update bluetooth metadata
   </script>
 </head>
 
 <body>
 
   <h1>Bluetooth Mode</h1>
+
+  <div id="bluetooth_info" class="info-section">
+    <div id="connection_state" class="info" style="font-size: 1.5rem;">Retrieving data...</div>
+    <div id="device_name" class="info" style="visibility: hidden;">Connected device: -</div>
+  </div>
+
+  <div id="media_info" class="info-section" style="visibility: hidden;">
+    <div id="playback_state" class="info" style="visibility: hidden;"></div>
+    <div id="media_title" class="info" style="font-size: 1.5rem; visibility: hidden;"></div>
+    <div id="media_artist" class="info" style="visibility: hidden;"></div>
+    <div id="media_album" class="info" style="visibility: hidden;"></div>
+  </div>
 
 </body>
 </html>

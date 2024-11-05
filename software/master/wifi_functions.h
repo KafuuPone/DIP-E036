@@ -26,9 +26,9 @@ void WifiAP_begin() {
   Serial.println(myIP);
 }
 
-// Setup website (server_pt = &server, freq_pt = &curr_freq, vol_pt = &curr_vol, state_pt = &ready_state, freq_update = &wifi_freq_update, vol_update = &wifi_vol_update, tune_update = &wifi_tune_update, radio_text = &RDS_radiotext, bluetooth_mode = &bluetooth_mode)
+// Setup website (&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext, &bluetooth_mode, &connection_state, &playback_state, &device_name, &media_title, &media_artist, &media_album)
 // AsyncWebServer server(80);
-void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text, const bool* bluetooth_mode) {
+void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text, const bool* bluetooth_mode, const uint8_t* connection_state, const uint8_t* playback_state, char** device_name, char** media_title, char** media_artist, char** media_album) {
   // Serve the web page with FM radio station list
   (*server_pt).on("/", HTTP_GET, [=](AsyncWebServerRequest* request) {
     // Radio mode
@@ -46,6 +46,26 @@ void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* v
     // Create a JSON response with the state value "0" or "1"
     String jsonResponse = "{\"mode\":\"" + String(*bluetooth_mode) + "\"}";
     request->send(200, "application/json", jsonResponse);
+  });
+
+  // Updates on bluetooth metadata
+  (*server_pt).on("/bluetooth-metadata", HTTP_GET, [=](AsyncWebServerRequest *request) {
+    if(*bluetooth_mode) {
+      String temp_device_name = *device_name;
+      String temp_media_title = *media_title;
+      String temp_media_artist = *media_artist;
+      String temp_media_album = *media_album;
+
+      String jsonResponse = "{";
+      jsonResponse += "\"connection_state\":\"" + String(*connection_state) + "\",";
+      jsonResponse += "\"playback_state\":\"" + String(*playback_state) + "\",";
+      jsonResponse += "\"device_name\":\"" + temp_device_name + "\",";
+      jsonResponse += "\"media_title\":\"" + temp_media_title + "\",";
+      jsonResponse += "\"media_artist\":\"" + temp_media_artist + "\",";
+      jsonResponse += "\"media_album\":\"" + temp_media_album + "\"";
+      jsonResponse += "}";
+      request->send(200, "application/json", jsonResponse);
+    }
   });
 
   // Handle AJAX requests, get current frequency, volume and radiotext

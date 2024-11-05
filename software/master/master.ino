@@ -250,7 +250,7 @@ void setup() {
 
   // Open web server
   WifiAP_begin();
-  ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext, &bluetooth_mode);
+  ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext, &bluetooth_mode, &connection_state, &playback_state, &device_name, &media_title, &media_artist, &media_album);
 
   // Initialize knob
   attachInterrupt(digitalPinToInterrupt(CLK), updatestate_ISR, CHANGE);
@@ -307,9 +307,6 @@ void loop() {
         Wire.beginTransmission(SLAVE_ADDRESS);
         Wire.printf("BLUETOOTH ON");
         Wire.endTransmission();
-
-        // Turn off web server
-        // server.end();
       }
       else {
         // Disable bluetooth
@@ -320,9 +317,6 @@ void loop() {
         Wire.beginTransmission(SLAVE_ADDRESS);
         Wire.printf("BLUETOOTH OFF");
         Wire.endTransmission();
-
-        // Turn web server back on
-        // ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext);
       }
       // Exit settings
       settings_mode = !settings_mode;
@@ -474,6 +468,7 @@ void loop() {
       bool retry;
       do {
         if(loop_num % 10 == 0) {
+          // Retrieve metadata occassionally
           retry = false;
 
           Serial.println("");
@@ -683,6 +678,40 @@ void loop() {
                 }
               }
             }
+          }
+
+          // Remove unnecessary variables
+          // Not in CONNECTED state
+          if(connection_state != 1) {
+            free(device_name);
+            device_name = (char*)malloc(1);
+            device_name[0] = '\0';
+
+            free(media_title);
+            media_title = (char*)malloc(1);
+            media_title[0] = '\0';
+
+            free(media_artist);
+            media_artist = (char*)malloc(1);
+            media_artist[0] = '\0';
+            
+            free(media_album);
+            media_album = (char*)malloc(1);
+            media_album[0] = '\0';
+          }
+          // Playback is STOPPED
+          else if(playback_state == 0) {
+            free(media_title);
+            media_title = (char*)malloc(1);
+            media_title[0] = '\0';
+
+            free(media_artist);
+            media_artist = (char*)malloc(1);
+            media_artist[0] = '\0';
+            
+            free(media_album);
+            media_album = (char*)malloc(1);
+            media_album[0] = '\0';
           }
 
           // Finish receiving data
@@ -1046,6 +1075,8 @@ void loop() {
 
         // Display nothing if RDS disabled
         else {
+          RDS_radiotext = "Disabled";
+
           lcd.setCursor(0, 1);
           lcd.print("                ");
         }
