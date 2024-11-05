@@ -10,6 +10,17 @@
 #define LCD_ADDRESS 0x27
 #define SLAVE_ADDRESS 0x55
 
+// Button pin numbers
+#define LEFT_BUTTON 18
+#define RIGHT_BUTTON 17
+#define CH1 4
+#define CH2 5
+#define CH3 6
+#define CH4 7
+#define CH5 15
+#define CH6 16
+#define SETTINGS_BUTTON 10
+
 // knob pin numbers
 #define CLK 11
 #define DT 12
@@ -26,7 +37,7 @@
 #define TITLE_SCROLL 500
 
 // Wi-Fi
-#define WIFI_SSID "Webserver-demo"
+#define WIFI_SSID "DIP-E036 Speaker"
 #define WIFI_PW "123456789"
 
 #endif

@@ -26,12 +26,26 @@ void WifiAP_begin() {
   Serial.println(myIP);
 }
 
-// Setup website (server_pt = &server, freq_pt = &curr_freq, vol_pt = &curr_vol, state_pt = &ready_state, freq_update = &wifi_freq_update, vol_update = &wifi_vol_update, tune_update = &wifi_tune_update, radio_text = &RDS_radiotext)
+// Setup website (server_pt = &server, freq_pt = &curr_freq, vol_pt = &curr_vol, state_pt = &ready_state, freq_update = &wifi_freq_update, vol_update = &wifi_vol_update, tune_update = &wifi_tune_update, radio_text = &RDS_radiotext, bluetooth_mode = &bluetooth_mode)
 // AsyncWebServer server(80);
-void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text) {
+void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text, const bool* bluetooth_mode) {
   // Serve the web page with FM radio station list
-  (*server_pt).on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send_P(200, "text/html", index_html);
+  (*server_pt).on("/", HTTP_GET, [=](AsyncWebServerRequest* request) {
+    // Radio mode
+    if(!(*bluetooth_mode)) {
+      request->send_P(200, "text/html", index_html);
+    }
+    // Bluetooth mode, different html
+    else {
+      request->send_P(200, "text/html", bluetooth_index_html);
+    }
+  });
+
+  // Updates bluetooth mode
+  (*server_pt).on("/bluetooth", HTTP_GET, [=](AsyncWebServerRequest *request) {
+    // Create a JSON response with the state value "0" or "1"
+    String jsonResponse = "{\"mode\":\"" + String(*bluetooth_mode) + "\"}";
+    request->send(200, "application/json", jsonResponse);
   });
 
   // Handle AJAX requests, get current frequency, volume and radiotext

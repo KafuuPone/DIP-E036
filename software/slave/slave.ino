@@ -11,6 +11,8 @@
 #define BCK 2
 #define LRCK 4
 #define DIN 5
+// Device name
+#define BT_DEVICE_NAME "DIP-E036 Speaker"
 
 // Bluetooth audio output
 I2SStream i2s;
@@ -93,18 +95,24 @@ void onReceive(int len) {
   temp[len] = '\0';  // Make sure temp is a valid C-style string
 
   // Do stuff
-  if (strcmp(temp, "BLUETOOTH ON") == 0) {
-    a2dp_sink.start("DIP-E036 Speaker");
+  // Turn bluetooth on
+  if(strcmp(temp, "BLUETOOTH ON") == 0) {
+    a2dp_sink.start(BT_DEVICE_NAME);
     bluetooth_mode = true;
     connection_state = 2; // DISCONNECTED
-    packet_index = 0;
     Serial.println("Bluetooth ON");
   }
-  else if (strcmp(temp, "BLUETOOTH OFF") == 0) {
+  // Turn bluetooth off
+  else if(strcmp(temp, "BLUETOOTH OFF") == 0) {
     a2dp_sink.end();
     bluetooth_mode = false;
     connection_state = 0; // OFF
     Serial.println("Bluetooth OFF");
+  }
+  // Change current packet number, syntax "PACKET<byte>" where <byte> is packet index
+  else if(strncmp(temp, "PACKET", 6) == 0) {
+    packet_index = (uint8_t)temp[6];
+    Serial.printf("Packet number: %d\n", packet_index);
   }
   else {
     Serial.print("Invalid signal received: ");
@@ -120,8 +128,6 @@ void onRequest() {
   }
 
   // sending data sequentially
-  // ensure packet index is within range
-  packet_index %= packet_num;
   Wire.write(packet_index); // packet index
   Serial.printf("%02x ", packet_index);
   Wire.write(packet_num); // total packet number
@@ -138,9 +144,6 @@ void onRequest() {
     }
   }
   Serial.println("");
-
-  // update packet index
-  packet_index = (packet_index + 1) % packet_num;
 }
 
 // Change in bluetooth connection state

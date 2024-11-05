@@ -1,7 +1,7 @@
 #ifndef website_html_h
 #define website_html_h
 
-// Web server interface
+// Web server interface, radio mode
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML>
 <html lang="en">
@@ -140,6 +140,21 @@ const char index_html[] PROGMEM = R"rawliteral(
   </style>
 
   <script>
+    // If detected bluetooth mode is 1, refresh webpage to get new html
+    function updateBluetoothMode() {
+      fetch('/bluetooth')
+      .then(response => response.json())
+      .then(data => {
+        // Only run if bluetooth mode is "1"
+        if(data.mode === "1") {
+          location.reload();
+        }
+      });
+    }
+
+    // Run check bluetooth mode function every second
+    var bluetoothUpdateId = setInterval(updateBluetoothMode, 1000);
+
     // Updates webpage to follow radio if radio is ready
     function updateWebpage() {
       fetch('/status')
@@ -193,7 +208,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       });
     }
 
-    // Update the values every 50ms
+    // Update the values every 100ms
     var refreshIntervalId = setInterval(updateWebpage, 100);
 
     function readFrequency() {
@@ -396,6 +411,60 @@ const char index_html[] PROGMEM = R"rawliteral(
     <div id="vol-status">Volume: 0</div>
     <div id="radiotext-status">RDS: </div>
   </div>
+
+</body>
+</html>
+)rawliteral";
+
+
+// Webpage in bluetooth mode
+const char bluetooth_index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FM Radio Selector</title>
+
+  <style>
+    /* Centering the text */
+    body, html {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      justify-content: center;  /* Horizontal centering */
+      align-items: center;      /* Vertical centering */
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+    
+    h1 {
+      font-size: 2em;
+      color: #333;
+    }
+  </style>
+
+  <script>
+    // If detected bluetooth mode is 0, refresh webpage to get new html
+    function updateBluetoothMode() {
+      fetch('/bluetooth')
+      .then(response => response.json())
+      .then(data => {
+        // Only run if bluetooth mode is "0"
+        if(data.mode === "0") {
+          location.reload();
+        }
+      });
+    }
+
+    // Run check bluetooth mode function every second
+    var bluetoothUpdateId = setInterval(updateBluetoothMode, 1000);
+  </script>
+</head>
+
+<body>
+
+  <h1>Bluetooth Mode</h1>
 
 </body>
 </html>

@@ -190,10 +190,10 @@ void setup() {
   Serial.begin(115200); // serial communication speed 115200 bps
 
   // Initialize buttons
-  l_key.begin(4); r_key.begin(5);
-  chn_button[0].begin(6); chn_button[1].begin(7); chn_button[2].begin(15);
-  chn_button[3].begin(16); chn_button[4].begin(17); chn_button[5].begin(18);
-  settings.begin(10);
+  l_key.begin(LEFT_BUTTON); r_key.begin(RIGHT_BUTTON);
+  chn_button[0].begin(CH1); chn_button[1].begin(CH2); chn_button[2].begin(CH3);
+  chn_button[3].begin(CH4); chn_button[4].begin(CH5); chn_button[5].begin(CH6);
+  settings.begin(SETTINGS_BUTTON);
 
   // Initialize knob button
   knob_switch.begin(13);
@@ -250,7 +250,7 @@ void setup() {
 
   // Open web server
   WifiAP_begin();
-  ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext);
+  ServerBegin(&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext, &bluetooth_mode);
 
   // Initialize knob
   attachInterrupt(digitalPinToInterrupt(CLK), updatestate_ISR, CHANGE);
@@ -471,169 +471,225 @@ void loop() {
       }
 
       // Retrieves bluetooth information from slave
-      if(loop_num % 10 == 0) {
-        Serial.println("Requesting data...");
-        uint8_t packet_index;
-        uint8_t packet_num;
-        bool retry = true;
-        // Retrieve first packet first
-        uint8_t first_packet[32]; // First received byte string
-        // Retry receiving the first packet if first byte is not 0
-        while(retry) {
-          uint8_t bytesReceived = Wire.requestFrom(SLAVE_ADDRESS, 32); // Reads 1 packet = 32 bytes
-          if(bytesReceived != 32) {
-            Serial.println("Error occured, received packet is not 32 bytes");
-          }
-          Wire.readBytes(first_packet, 32);
-          // Print first packet received
-          for(int i=0; i<32; i++) Serial.printf("%02x ", first_packet[i]);
+      bool retry;
+      do {
+        if(loop_num % 10 == 0) {
+          retry = false;
+
           Serial.println("");
-          // Determine packet index and total packet number
-          packet_index = first_packet[0];
-          packet_num = first_packet[1];
+          Serial.println("Requesting data...");
 
-          if(packet_index != 0) {
-            Serial.println("Error occured, first packet received is not indexed 0");
-          }
-          else if(packet_num == 0) {
-            Serial.println("Error occured, total packet number is 0");
-          }
-          else {
-            retry = false;
-          }
-        }
-        Serial.println("First packet received successfully.");
+          // Local variables
+          uint8_t packet_index;
+          uint8_t packet_num;
 
-        // Free old and create new datastring
-        free(datastring);
-        datastring = (uint8_t*)malloc(30 * packet_num);
-        // Save the first received byte in datastring
-        for(int i=0; i<30; i++) {
-          datastring[30*packet_index + i] = first_packet[2 + i];
-        }
+          // Retrieve first packet first
+          uint8_t first_packet[32]; // First received byte string
+          // Retry until received packet
+          while(true) {
+            delay(10);
 
-        // Save the rest of the bytes
-        packet_index++;
-        for(; packet_index<packet_num; packet_index++) {
-          delay(10);
-          // Requests packet
-          uint8_t bytesReceived = Wire.requestFrom(SLAVE_ADDRESS, 32); // Reads 1 packet = 32 bytes
-          if(bytesReceived != 32) {
-            Serial.println("Error occured, received packet is not 32 bytes");
-          }
-          uint8_t packet[32]; // Save byte into temp array
-          Wire.readBytes(packet, 32);
-          // Print packet
-          for(int i=0; i<32; i++) Serial.printf("%02x ", packet[i]);
-          Serial.println("");
-          if(packet_index != packet[0]) {
-            Serial.println("Error occured, packet index mismatch");
-          }
-          if(packet_num != packet[1]) {
-            Serial.println("Error occured, total packet number mismatch");
+            // Change slave packet index
+            Wire.beginTransmission(SLAVE_ADDRESS);
+            Wire.printf("PACKET");
+            Wire.write((uint8_t)0);
+            Wire.endTransmission();
+
+            uint8_t bytesReceived = Wire.requestFrom(SLAVE_ADDRESS, 32); // Reads 1 packet = 32 bytes
+            if(bytesReceived != 32) {
+              Serial.println("Error occured, received packet is not 32 bytes");
+              continue;
+            }
+            Wire.readBytes(first_packet, 32);
+
+            // Print first packet received
+            for(int i=0; i<32; i++) Serial.printf("%02x ", first_packet[i]);
+            Serial.println("");
+
+            // Determine packet index and total packet number
+            packet_index = first_packet[0];
+            packet_num = first_packet[1];
+
+            // Checking validity
+            if(packet_index != 0) {
+              Serial.println("Error occured, first packet received is not indexed 0");
+              continue;
+            }
+            else if(packet_num == 0) {
+              Serial.println("Error occured, total packet number is 0");
+              continue;
+            }
+
+            // Successfully received packet
+            Serial.printf("Packet index %d received successfully.\n", packet_index);
+            break;
           }
 
-          // Saves packet
+          // Free old and create new datastring
+          free(datastring);
+          datastring = (uint8_t*)malloc(30 * packet_num);
+          // Save the first received byte in datastring
           for(int i=0; i<30; i++) {
-            datastring[30*packet_index + i] = packet[2 + i];
+            datastring[30*packet_index + i] = first_packet[2 + i];
           }
-        }
 
-        // Double check if packet is valid (has 7 variables), also to retrieve separator index in datastring
-        int separator_count = 0;
-        uint8_t separator_pos[7]; // index position of separator 0x1d
-        for(int i=0; i<30*packet_num; i++) {
-          if(datastring[i] == 0x1d) {
-            separator_pos[separator_count] = i;
-            separator_count += 1;
-          }
-        }
-        if(separator_count != 7) {
-          Serial.println("Error occured, number of variables invalid");
-        }
+          // Save the rest of the bytes
+          for(packet_index = 1; packet_index < packet_num; packet_index++) {
+            // Retrying until received packet
+            while(true) {
+              delay(10);
 
-        // Use the datastring to update global bluetooth variables
-        // bluetooth_mode, 0, connection_state, 1, playback_state, 2
-        // device_name, 3, media_title, 4, media_artist, 5, media_album, 6
-        for(int i=0; i<30*packet_num; i++) {
-          // bluetooth_mode ignored
-          // connection_state
-          if(i == separator_pos[1] - 1) {
-            connection_state = datastring[i];
-          }
-          // playback_state
-          else if(i == separator_pos[2] - 1) {
-            playback_state = datastring[i];
-          }
-          // device_name
-          else if(i > separator_pos[2] && i < separator_pos[3]) {
-            // Create new variable
-            if(i == separator_pos[2] + 1) {
-              free(device_name);
-              device_name = (char*)malloc(separator_pos[3] - separator_pos[2]); // including terminator
-              device_name[0] = datastring[i];
-            }
-            else {
-              device_name[i - (separator_pos[2] + 1)] = datastring[i];
-              // if last char, add a terminator 
-              if(i == separator_pos[3] - 1) {
-                device_name[separator_pos[3] - separator_pos[2] - 1] = '\0';
-              }
-            }
-          }
-          // media_title
-          else if(i > separator_pos[3] && i < separator_pos[4]) {
-            // Create new variable
-            if(i == separator_pos[3] + 1) {
-              free(media_title);
-              media_title = (char*)malloc(separator_pos[4] - separator_pos[3]); // including terminator
-              media_title[0] = datastring[i];
-            }
-            else {
-              media_title[i - (separator_pos[3] + 1)] = datastring[i];
-              // if last char, add a terminator 
-              if(i == separator_pos[4] - 1) {
-                media_title[separator_pos[4] - separator_pos[3] - 1] = '\0';
-              }
-            }
-          }
-          // media_artist
-          else if(i > separator_pos[4] && i < separator_pos[5]) {
-            // Create new variable
-            if(i == separator_pos[4] + 1) {
-              free(media_artist);
-              media_artist = (char*)malloc(separator_pos[5] - separator_pos[4]); // including terminator
-              media_artist[0] = datastring[i];
-            }
-            else {
-              media_artist[i - (separator_pos[4] + 1)] = datastring[i];
-              // if last char, add a terminator 
-              if(i == separator_pos[5] - 1) {
-                media_artist[separator_pos[5] - separator_pos[4] - 1] = '\0';
-              }
-            }
-          }
-          // media_album
-          else if(i > separator_pos[5] && i < separator_pos[6]) {
-            // Create new variable
-            if(i == separator_pos[5] + 1) {
-              free(media_album);
-              media_album = (char*)malloc(separator_pos[6] - separator_pos[5]); // including terminator
-              media_album[0] = datastring[i];
-            }
-            else {
-              media_album[i - (separator_pos[5] + 1)] = datastring[i];
-              // if last char, add a terminator 
-              if(i == separator_pos[6] - 1) {
-                media_album[separator_pos[6] - separator_pos[5] - 1] = '\0';
-              }
-            }
-          }
-        }
+              // Change slave packet index
+              Wire.beginTransmission(SLAVE_ADDRESS);
+              Wire.printf("PACKET");
+              Wire.write((uint8_t)packet_index);
+              Wire.endTransmission();
 
-        // Finish receiving data
-        Serial.println("Finished receiving data.");
-      }
+              // Requests packet
+              uint8_t bytesReceived = Wire.requestFrom(SLAVE_ADDRESS, 32); // Reads 1 packet = 32 bytes
+              if(bytesReceived != 32) {
+                Serial.println("Error occured, received packet is not 32 bytes");
+                continue;
+              }
+
+              // Save byte into temp array
+              uint8_t packet[32];
+              Wire.readBytes(packet, 32);
+
+              // Print packet
+              for(int i=0; i<32; i++) Serial.printf("%02x ", packet[i]);
+              Serial.println("");
+              if(packet_index != packet[0]) {
+                Serial.println("Error occured, packet index mismatch");
+                continue;
+              }
+              if(packet_num != packet[1]) {
+                Serial.println("Error occured, total packet number mismatch");
+                retry = true; // Retry entire packet receival
+                break;
+              }
+
+              // Saves packet
+              for(int i=0; i<30; i++) {
+                datastring[30*packet_index + i] = packet[2 + i];
+              }
+
+              // Successfully saved one packet
+              Serial.printf("Packet index %d received successfully.\n", packet_index);
+              break;
+            }
+
+            // Leave loop if retry is true
+            if(retry) {
+              break;
+            }
+          }
+
+          // Go directly to next loop if retry is true
+          if(retry) {
+            Serial.println("Restarting packet receival");
+            break;
+          }
+
+          // Double check if packet is valid (has 7 variables), also to retrieve separator index in datastring
+          int separator_count = 0;
+          uint8_t separator_pos[7]; // index position of separator 0x1d
+          for(int i=0; i<30*packet_num; i++) {
+            if(datastring[i] == 0x1d) {
+              separator_pos[separator_count] = i;
+              separator_count += 1;
+            }
+          }
+          if(separator_count != 7) {
+            Serial.println("Error occured, number of variables invalid");
+            break;
+            // Try another time, don't save data
+          }
+
+          // Use the datastring to update global bluetooth variables
+          // bluetooth_mode, 0, connection_state, 1, playback_state, 2
+          // device_name, 3, media_title, 4, media_artist, 5, media_album, 6
+          for(int i=0; i<30*packet_num; i++) {
+            // bluetooth_mode ignored
+            // connection_state
+            if(i == separator_pos[1] - 1) {
+              connection_state = datastring[i];
+            }
+            // playback_state
+            else if(i == separator_pos[2] - 1) {
+              playback_state = datastring[i];
+            }
+            // device_name
+            else if(i > separator_pos[2] && i < separator_pos[3]) {
+              // Create new variable
+              if(i == separator_pos[2] + 1) {
+                free(device_name);
+                device_name = (char*)malloc(separator_pos[3] - separator_pos[2]); // including terminator
+                device_name[0] = datastring[i];
+              }
+              else {
+                device_name[i - (separator_pos[2] + 1)] = datastring[i];
+                // if last char, add a terminator 
+                if(i == separator_pos[3] - 1) {
+                  device_name[separator_pos[3] - separator_pos[2] - 1] = '\0';
+                }
+              }
+            }
+            // media_title
+            else if(i > separator_pos[3] && i < separator_pos[4]) {
+              // Create new variable
+              if(i == separator_pos[3] + 1) {
+                free(media_title);
+                media_title = (char*)malloc(separator_pos[4] - separator_pos[3]); // including terminator
+                media_title[0] = datastring[i];
+              }
+              else {
+                media_title[i - (separator_pos[3] + 1)] = datastring[i];
+                // if last char, add a terminator 
+                if(i == separator_pos[4] - 1) {
+                  media_title[separator_pos[4] - separator_pos[3] - 1] = '\0';
+                }
+              }
+            }
+            // media_artist
+            else if(i > separator_pos[4] && i < separator_pos[5]) {
+              // Create new variable
+              if(i == separator_pos[4] + 1) {
+                free(media_artist);
+                media_artist = (char*)malloc(separator_pos[5] - separator_pos[4]); // including terminator
+                media_artist[0] = datastring[i];
+              }
+              else {
+                media_artist[i - (separator_pos[4] + 1)] = datastring[i];
+                // if last char, add a terminator 
+                if(i == separator_pos[5] - 1) {
+                  media_artist[separator_pos[5] - separator_pos[4] - 1] = '\0';
+                }
+              }
+            }
+            // media_album
+            else if(i > separator_pos[5] && i < separator_pos[6]) {
+              // Create new variable
+              if(i == separator_pos[5] + 1) {
+                free(media_album);
+                media_album = (char*)malloc(separator_pos[6] - separator_pos[5]); // including terminator
+                media_album[0] = datastring[i];
+              }
+              else {
+                media_album[i - (separator_pos[5] + 1)] = datastring[i];
+                // if last char, add a terminator 
+                if(i == separator_pos[6] - 1) {
+                  media_album[separator_pos[6] - separator_pos[5] - 1] = '\0';
+                }
+              }
+            }
+          }
+
+          // Finish receiving data
+          Serial.println("Finished receiving data.");
+          Serial.println("");
+        }
+      } while(false);
     }
 
     // Radio mode
