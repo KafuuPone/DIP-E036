@@ -471,17 +471,13 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
     }
 
     button {
-      font-size: 16px;
       padding: 10px;
       margin: 10px 0;
       border: 2px solid #0078d7;
-      border-radius: 5px;
-      transition: all 0.3s ease;
 
       background-color: #0078d7;
       color: white;
       border: none;
-      padding: 12px 16px;
       font-size: 16px;
       border-radius: 5px;
       transition: background-color 0.3s ease;
