@@ -26,9 +26,9 @@ void WifiAP_begin() {
   Serial.println(myIP);
 }
 
-// Setup website (&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext, &bluetooth_mode, &connection_state, &playback_state, &device_name, &media_title, &media_artist, &media_album)
+// Setup website (&server, &curr_freq, &curr_vol, &ready_state, &wifi_freq_update, &wifi_vol_update, &wifi_tune_update, &RDS_radiotext, &bluetooth_mode, &connection_state, &playback_state, &device_name, &media_title, &media_artist, &media_album, &server_bluetooth_mode)
 // AsyncWebServer server(80);
-void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text, const bool* bluetooth_mode, const uint8_t* connection_state, const uint8_t* playback_state, char** device_name, char** media_title, char** media_artist, char** media_album) {
+void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* vol_pt, const bool* state_pt, int* freq_update, uint8_t* vol_update, String* tune_update, const String* radio_text, const bool* bluetooth_mode, const uint8_t* connection_state, const uint8_t* playback_state, char** device_name, char** media_title, char** media_artist, char** media_album, bool* server_bluetooth_mode) {
   // Serve the web page with FM radio station list
   (*server_pt).on("/", HTTP_GET, [=](AsyncWebServerRequest* request) {
     // Radio mode
@@ -91,6 +91,7 @@ void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* v
     String frequencyMessage = "Nan";
     String volumeMessage = "Nan";
     String tuneMessage = "Nan";
+    String bluetoothModeMessage = "Nan";
     if(request->hasParam("frequency")) {
       frequencyMessage = request->getParam("frequency")->value();
       *freq_update = frequencyMessage.toFloat() * 10;
@@ -102,6 +103,10 @@ void ServerBegin(AsyncWebServer* server_pt, const int* freq_pt, const uint8_t* v
     if(request->hasParam("tune")) {
       tuneMessage = request->getParam("tune")->value();
       *tune_update = tuneMessage;
+    }
+    if(request->hasParam("bluetooth-mode")) {
+      bluetoothModeMessage = request->getParam("bluetooth-mode")->value();
+      *server_bluetooth_mode = (bluetoothModeMessage == "true");
     }
   });
 

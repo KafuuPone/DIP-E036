@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FM Radio Selector</title>
+  <title>Radio Mode</title>
 
   <style>
     body {
@@ -135,6 +135,21 @@
   </style>
 
   <script>
+    // If detected bluetooth mode is 1, refresh webpage to get new html
+    function updateBluetoothMode() {
+      fetch('/bluetooth')
+      .then(response => response.json())
+      .then(data => {
+        // Only run if bluetooth mode is "1"
+        if(data.mode === "1") {
+          location.reload();
+        }
+      });
+    }
+
+    // Run check bluetooth mode function every second
+    var bluetoothUpdateId = setInterval(updateBluetoothMode, 1000);
+
     // Updates webpage to follow radio if radio is ready
     function updateWebpage() {
       fetch('/status')
@@ -149,6 +164,7 @@
 
             var freqString = data.frequency; // Sending 922 instead of 92.2
             var volString = data.volume;
+            var radiotext = data.radiotext;
 
             // Update frequency
             if(freqString.length == 3) {
@@ -173,6 +189,7 @@
             // Bottom status update
             document.getElementById("freq-status").innerHTML = "Selected frequency: " + String((parseInt(freqString)/10).toFixed(1)) + "MHz";
             document.getElementById("vol-status").innerHTML = "Volume: " + volString;
+            document.getElementById("radiotext-status").innerHTML = "RDS: " + radiotext;
           });
         }
         else {
@@ -180,12 +197,13 @@
 
           // Update the status dynamically
           document.getElementById("freq-status").innerHTML = "Tuning...";
-          document.getElementById("vol-status").innerHTML = "Tuning...";
+          document.getElementById("vol-status").innerHTML = "";
+          document.getElementById("radiotext-status").innerHTML = "";
         }
       });
     }
 
-    // Update the values every 50ms
+    // Update the values every 100ms
     var refreshIntervalId = setInterval(updateWebpage, 100);
 
     function readFrequency() {
@@ -206,6 +224,7 @@
       document.getElementById("freq-status").innerHTML = "Tuning...";
 
       var frequency = readFrequency();
+      var volume = document.getElementById("volume").value;
 
       if(direction == 'up') {
         frequency += parseFloat(digitValue);
@@ -218,8 +237,8 @@
         return;
       }
 
-      // Send the frequency values to the server
-      fetch("/get?frequency=" + frequency)
+      // Send the volume values to the server, and also frequency together
+      fetch("/get?frequency=" + frequency + "&volume=" + volume)
       .then(response => response.text())
       .catch(error => console.error("Error:", error));
 
@@ -292,9 +311,10 @@
       document.getElementById("vol-status").innerHTML = "Tuning...";
 
       var volume = document.getElementById("volume").value;
+      var frequency = readFrequency();
 
-      // Send the volume values to the server
-      fetch("/get?volume=" + volume)
+      // Send the volume values to the server, and also frequency together
+      fetch("/get?frequency=" + frequency + "&volume=" + volume)
       .then(response => response.text())
       .catch(error => console.error("Error:", error));
 
@@ -328,6 +348,14 @@
 
       // Resume refresh when radio is ready
       refreshIntervalId = setInterval(updateWebpage, 100);
+    }
+
+    // Notify ESP32 when bluetooth mode is switched
+    function switchBluetooth() {
+      // Send bluetooth info to server
+      fetch("/get?bluetooth-mode=true")
+      .then(response => response.text())
+      .catch(error => console.error("Error:", error));
     }
   </script>
 </head>
@@ -384,6 +412,11 @@
   <div class="status">
     <div id="freq-status">Selected frequency: 87.0MHz</div>
     <div id="vol-status">Volume: 0</div>
+    <div id="radiotext-status">RDS: </div>
+  </div>
+
+  <div class="button-container">
+    <button onclick="switchBluetooth()">Bluetooth Mode</button>
   </div>
 
 </body>

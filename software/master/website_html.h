@@ -354,6 +354,14 @@ const char index_html[] PROGMEM = R"rawliteral(
       // Resume refresh when radio is ready
       refreshIntervalId = setInterval(updateWebpage, 100);
     }
+
+    // Notify ESP32 when bluetooth mode is switched
+    function switchBluetooth() {
+      // Send bluetooth info to server
+      fetch("/get?bluetooth-mode=true")
+      .then(response => response.text())
+      .catch(error => console.error("Error:", error));
+    }
   </script>
 </head>
 
@@ -412,6 +420,10 @@ const char index_html[] PROGMEM = R"rawliteral(
     <div id="radiotext-status">RDS: </div>
   </div>
 
+  <div class="button-container">
+    <button onclick="switchBluetooth()">Bluetooth Mode</button>
+  </div>
+
 </body>
 </html>
 )rawliteral";
@@ -456,6 +468,33 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
 
     .info {
       margin: 5px 0;
+    }
+
+    button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px 0;
+      border: 2px solid #0078d7;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+
+      background-color: #0078d7;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      border-color: #0057a7;
+      cursor: pointer;
+      background-color: #0057a7;
+    }
+
+    .button-container {
+      margin-bottom: 30px;
     }
   </style>
 
@@ -544,7 +583,13 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
     var bluetoothUpdateId = setInterval(updateBluetoothMode, 1000);
     var metadataUpdateId = setInterval(updateMetadata, 100);
 
-    // Update bluetooth metadata
+    // Notify ESP32 when radio mode is switched
+    function switchRadio() {
+      // Send bluetooth info to server
+      fetch("/get?bluetooth-mode=false")
+      .then(response => response.text())
+      .catch(error => console.error("Error:", error));
+    }
   </script>
 </head>
 
@@ -562,6 +607,10 @@ const char bluetooth_index_html[] PROGMEM = R"rawliteral(
     <div id="media_title" class="info" style="font-size: 1.5rem; visibility: hidden;"></div>
     <div id="media_artist" class="info" style="visibility: hidden;"></div>
     <div id="media_album" class="info" style="visibility: hidden;"></div>
+  </div>
+
+  <div class="button-container">
+    <button onclick="switchRadio()">Radio Mode</button>
   </div>
 
 </body>
