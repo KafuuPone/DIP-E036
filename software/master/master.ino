@@ -108,14 +108,14 @@ uint8_t init_config[] = {
     // GPIO general purpose I/O                      000000: default values
 
   // register 0x05
-  0b10000010, 0b10000111,
+  0b10000010, 0b10110111,
     // INT_MODE                                           1: interrupt last until read reg 0x0C, default setting
     // SEEK_MODE                                         00: Default value; 10 enables RSSI seek mode (older)
     // RESERVED                                           0: by assumption
     // SEEKTH seek SNR threshold                       0100: default threshold, 71dB
     //
     // LNA_PORT_SEL LNA input port                       10: LNAP, default setting
-    // LNA_ICSEL_BIT LNA working current                 00: 1.8mA, default setting
+    // LNA_ICSEL_BIT LNA working current              00-11: 1.8mA, default setting
     // VOLUME                                          0111: default volume (0000=mute, 1111=max, logarithmic)
 
   // register 0x06
